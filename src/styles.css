@@ -32,6 +32,7 @@ pre {
 
 .app-shell {
   max-width: 1120px;
+  overflow-wrap: anywhere;
   margin: 0 auto;
   padding: 32px 20px 64px;
 }
@@ -59,7 +60,19 @@ pre {
   gap: 16px;
 }
 
+/* Long feed URLs, select options, and JSON must not widen grid tracks. */
+.layout-grid,
+.url-form,
+.field,
+.calendar-input-list,
+.calendar-preview,
+.status-list,
+.event-list {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .card {
+  min-width: 0;
   background: #ffffff;
   border: 1px solid #d7e0ea;
   border-radius: 12px;
@@ -69,6 +82,7 @@ pre {
 
 .card__header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 12px;
   align-items: flex-start;
@@ -104,6 +118,7 @@ pre {
 
 .field input,
 .field select {
+  min-width: 0;
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #c7d2df;
