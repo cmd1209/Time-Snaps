@@ -45,7 +45,7 @@ async function fetchCalendarViaProxy(url: string): Promise<string> {
   if (!response.ok) {
     let message =
       response.status === 404
-        ? 'Local calendar proxy not found at /api/calendar. Run the app with `npm run dev`; the proxy only exists in the Vite dev server.'
+        ? 'Calendar endpoint not found at /api/calendar. Deploy the complete project to Vercel, or run npm run dev locally.'
         : `Proxy request failed with ${response.status}.`;
 
     try {
@@ -204,5 +204,5 @@ export function summarizeEvents(events: CalendarEvent[]): CalendarSummary {
 export function describeLoadMode(mode: LoadMode): string {
   return mode === 'direct'
     ? 'Loaded directly from the public URL in the browser.'
-    : 'Loaded through the local Vite dev proxy after the browser fetch likely hit CORS.';
+    : 'Loaded through the calendar server after the browser request failed.';
 }

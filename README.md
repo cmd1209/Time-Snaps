@@ -1,13 +1,6 @@
 # Time Snaps
 
-Small local-first proof of concept for testing whether one or more public iCloud calendar URLs can be fetched, parsed, and displayed for later time tracking and billing work.
-
-## Stack
-
-- Vite
-- React
-- TypeScript
-- `ical.js` for ICS parsing
+Small React + TypeScript + Vite app for fetching, parsing, and displaying public Apple/iCloud calendar feeds with `ical.js`.
 
 ## Run locally
 
@@ -16,33 +9,35 @@ npm install
 npm run dev
 ```
 
-Then open the local Vite URL shown in the terminal.
+Paste a public iCloud calendar sharing URL (`webcal://...` or `https://...`), let the app detect its name, then select **Load Calendars**. Add more fields for multiple feeds.
 
-## What it does
+The browser first tries the feed directly. If that fails (for example because of CORS), it posts the URL to `/api/calendar`. Locally, the existing Vite development proxy handles this request. On Vercel, `api/calendar.js` handles it as a Node function.
 
-1. Accepts one or more pasted public calendar URLs such as `webcal://...`
-2. Normalizes `webcal://` to `https://`
-3. Tries to fetch each ICS feed directly in the browser
-4. Falls back to a local Vite dev proxy if the browser request likely fails because of CORS
-5. Parses the calendar name and `VEVENT` entries from each ICS feed
-6. Displays:
-   - connection/status feedback
-   - per-calendar load results
-   - raw event list
-   - calendar name for each event
-   - total events
-   - total calendars
-   - total tracked duration
-   - earliest and latest event dates
-   - a sample parsed event preview
+## Deploy on Vercel
 
-## Important limitation
+Deploy the repository root, including the `api` directory, through the existing GitHub-connected Vercel project:
 
-Public iCloud calendar feeds may still be blocked or behave inconsistently depending on:
+- Framework preset: Vite
+- Build command: `npm run build`
+- Output directory: `dist`
+- No environment variables or additional dependencies are required.
 
-- browser CORS enforcement
-- Apple response headers
-- whether the shared calendar URL is actually public and valid
-- network restrictions on the local machine
+Push the changes to the branch connected to Vercel to trigger its deployment. Uploading only `dist` will not deploy the calendar function. `npm run preview` also does not run Vercel functions.
 
-The local Vite proxy only works while running this app locally in development. It is not a production backend.
+The public endpoint accepts only HTTPS public feeds under `/published/` on iCloud calendar hosts (`calendars.icloud.com`, `caldav.icloud.com`, and their `pXX-` variants). It validates redirect destinations, allows up to three redirects, times out after ten seconds, limits feeds to 3 MB, and returns `Cache-Control: no-store`. It does not require or store Apple passwords.
+
+## Verify
+
+```bash
+node --test tests/calendar.test.js
+npm run build
+```
+
+After deployment, paste a public Apple calendar URL and load it. Verify the detected name, event list, and summary. When the direct fetch is blocked by CORS, the Network panel should show a successful POST to `/api/calendar`. An ordinary GET to that endpoint should return 405, not 404.
+
+## Current limits
+
+- Calendars must be publicly shared. Anyone with the feed URL can access the published data.
+- Calendar URLs and events remain in browser memory and reset on refresh. Authentication and saved calendars through Supabase are a later step.
+- Repeating event definitions are parsed but not expanded into individual occurrences.
+- Apple can still return unavailable, revoked, or slow feeds; the app shows an error for each failed calendar.

@@ -33,7 +33,7 @@ export function StatusCard({ statusTone, statusMessage, activeMode, calendarLoad
       ) : null}
       <p className="hint">
         Public iCloud feeds often fail with browser CORS restrictions. This prototype tries a direct browser request
-        first, then falls back to a local Vite dev proxy while running locally.
+        first, then falls back to the calendar server.
       </p>
     </Card>
   );

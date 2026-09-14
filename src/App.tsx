@@ -218,7 +218,7 @@ export default function App() {
   return (
     <main className="app-shell">
       <header className="app-header">
-        <p className="eyebrow">Local-first proof of concept</p>
+        <p className="eyebrow">Public calendar viewer</p>
         <h1>Time Snaps</h1>
         <p className="lede">
           Test whether one or more public iCloud calendar feeds can be converted from <code>webcal://</code>, fetched,
