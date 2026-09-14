@@ -3,19 +3,10 @@ import { Card } from './components/Card';
 import { supabase } from './lib/supabase';
 import { CalendarInputCard } from './components/CalendarInputCard';
 import { EventListCard } from './components/EventListCard';
-import { SampleEventCard } from './components/SampleEventCard';
-import { StatusCard } from './components/StatusCard';
 import { SummaryCard } from './components/SummaryCard';
-import { CalendarEvent, CalendarInputRow, CalendarLoadItem, CalendarSummary, LoadMode, StatusTone, SavedCalendar } from './types';
-import { loadCalendar, loadCalendarPreview, summarizeEvents } from './utils/calendar';
-
-const EMPTY_SUMMARY: CalendarSummary = {
-  totalCalendars: 0,
-  totalEvents: 0,
-  totalTrackedMinutes: 0,
-  earliestStart: null,
-  latestEnd: null
-};
+import { CalendarEvent, CalendarInputRow, CalendarLoadItem, StatusTone, SavedCalendar } from './types';
+import { filterEvents, timedMinutes } from './utils/eventView';
+import { loadCalendar, loadCalendarPreview } from './utils/calendar';
 
 interface AppProps { userId: string; email: string; onLogout: () => Promise<void>; logoutError: string }
 
@@ -30,6 +21,9 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [restoreAttempt, setRestoreAttempt] = useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [range, setRange] = useState({ from: '', to: '' });
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
   useEffect(() => {
     alive.current = true;
@@ -49,6 +43,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
         setSaveMessage('');
         setSavedCalendars(data);
         setSelectedCalendarId(data[0]?.id ?? '');
+        setSettingsOpen(data.length === 0);
         savedIds.current = data.map(row => row.id);
         setCalendarRows(data.length ? data.map(row => ({
           ...createEmptyRow(), id: row.id, url: row.calendar_url,
@@ -75,10 +70,8 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
     }
   ]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [calendarLoads, setCalendarLoads] = useState<CalendarLoadItem[]>([]);
   const [statusTone, setStatusTone] = useState<StatusTone>('idle');
-  const [statusMessage, setStatusMessage] = useState('Paste a public iCloud calendar URL to detect its name, then load calendars.');
-  const [loadMode, setLoadMode] = useState<LoadMode | null>(null);
+  const [statusMessage, setStatusMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   // Restore the first saved calendar automatically; selecting another fetches its events.
@@ -87,7 +80,8 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
     if (selected) void loadRows([{ url: selected.calendar_url }]);
   }, [savedCalendars, selectedCalendarId]);
 
-  const summary = useMemo(() => summarizeEvents(events), [events]);
+  const visibleEvents = useMemo(() => filterEvents(events, range.from, range.to), [events, range]);
+  const selectedCalendar = savedCalendars.find(calendar => calendar.id === selectedCalendarId);
 
   function createEmptyRow(): CalendarInputRow {
     const id = crypto.randomUUID();
@@ -104,7 +98,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
   }
 
   async function handleSave() {
-    if (saving || restoring || restoreFailed) return;
+    if (saving || restoring || restoreFailed || isLoading || calendarRows.some(row => row.isResolving)) return;
     setSaving(true);
     setSaveMessage('');
     try {
@@ -137,8 +131,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
       if (!rows.length) {
         loadRequest.current += 1;
         setEvents([]);
-        setCalendarLoads([]);
-        setLoadMode(null);
+        setLastRefreshed(null);
         setIsLoading(false);
         setStatusTone('idle');
         setStatusMessage('No saved calendars. Add a public calendar URL to get started.');
@@ -243,21 +236,14 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
     }
   }
 
-  async function handleSubmit() {
-    if (isLoading || saving || restoring || restoreFailed) return;
-    setSelectedCalendarId('');
-    await loadRows(calendarRows);
-  }
-
   async function loadRows(rows: { url: string }[]) {
     const requestId = ++loadRequest.current;
     const isCurrent = () => alive.current && requestId === loadRequest.current;
     setEvents([]);
-    setCalendarLoads([]);
     setIsLoading(true);
     setStatusTone('loading');
     setStatusMessage('Loading calendar feeds...');
-    setLoadMode(null);
+    setLastRefreshed(null);
 
     try {
       const filledRows = rows.filter((row) => row.url.trim());
@@ -297,16 +283,15 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
       const successfulLoads = results.filter((result) => !result.error);
       const failedLoads = results.length - successfulLoads.length;
 
-      setCalendarLoads(results);
       setEvents(nextEvents);
-      setLoadMode(successfulLoads.length === 1 ? successfulLoads[0].mode : null);
 
       if (successfulLoads.length === 0) {
         setStatusTone('error');
-        setStatusMessage(`All ${results.length} calendar load(s) failed.`);
+        setStatusMessage(results[0]?.error ?? 'Unable to load this calendar. Please try refreshing.');
         return;
       }
 
+      setLastRefreshed(new Date());
       setStatusTone(failedLoads > 0 ? 'error' : 'success');
       setStatusMessage(
         failedLoads > 0
@@ -318,10 +303,9 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
       const message = error instanceof Error ? error.message : 'Unexpected calendar loading error.';
 
       setEvents([]);
-      setCalendarLoads([]);
       setStatusTone('error');
       setStatusMessage(message);
-      setLoadMode(null);
+      setLastRefreshed(null);
     } finally {
       if (isCurrent()) setIsLoading(false);
     }
@@ -329,57 +313,53 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
 
   return (
     <main className="app-shell">
-      <header className="app-header">
-        <p className="eyebrow">Public calendar viewer</p>
-        <h1>Time Snaps</h1>
-        <p className="lede">
-          Test whether one or more public iCloud calendar feeds can be converted from <code>webcal://</code>, fetched,
-          parsed, and displayed as a basis for later time tracking and billing work.
-        </p>
-        <p>Signed in as {email}</p>
-        <button type="button" className="secondary-button" disabled={saving} onClick={() => void onLogout()}>Log out</button>
-        {logoutError && <p role="alert">{logoutError}</p>}
+      <header className="app-header viewer-header">
+        <div><p className="eyebrow">Your time, at a glance</p><h1>Time Snaps</h1></div>
+        <details className="account-menu">
+          <summary>Account</summary>
+          <div className="account-panel">
+            <p>{email}</p>
+            <button type="button" className="secondary-button" disabled={saving} onClick={() => void onLogout()}>Log out</button>
+          </div>
+        </details>
       </header>
+      {logoutError && <p role="alert">{logoutError}</p>}
 
       <div className="layout-grid">
-        <Card title="Saved calendars" subtitle="Choose a calendar to view its events.">
-          <div className="url-form">
+        <Card title={selectedCalendar?.name ?? 'Your calendars'}>
+          <div className="calendar-toolbar">
             <label className="field">
-              <span>Calendar</span>
-              <select
-                value={selectedCalendarId}
-                disabled={restoring || saving || restoreFailed || !savedCalendars.length}
-                onChange={event => setSelectedCalendarId(event.target.value)}
-              >
-                <option value="" disabled>{restoring ? 'Loading saved calendars...' : savedCalendars.length ? 'Select a saved calendar' : 'No saved calendars yet'}</option>
+              <span>Saved calendar</span>
+              <select value={selectedCalendarId} disabled={restoring || saving || restoreFailed || !savedCalendars.length} onChange={event => setSelectedCalendarId(event.target.value)}>
+                <option value="" disabled>{restoring ? 'Loading saved calendars...' : 'No saved calendars yet'}</option>
                 {savedCalendars.map(calendar => <option key={calendar.id} value={calendar.id}>{calendar.name}</option>)}
               </select>
             </label>
             <button type="button" className="secondary-button" disabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} onClick={() => {
-              const selected = savedCalendars.find(calendar => calendar.id === selectedCalendarId);
-              if (selected) void loadRows([{ url: selected.calendar_url }]);
-            }}>{isLoading && selectedCalendarId ? 'Loading events...' : 'Refresh selected calendar'}</button>
+              if (selectedCalendar) void loadRows([{ url: selectedCalendar.calendar_url }]);
+            }}>{isLoading ? 'Refreshing...' : 'Refresh'}</button>
           </div>
+          <div className="calendar-feedback" role="status">
+            {restoring ? 'Loading saved calendars...' : isLoading ? 'Fetching the latest events...' : lastRefreshed ? `Last refreshed at ${lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : !savedCalendars.length && !restoreFailed ? 'Add your first calendar in settings below.' : null}
+          </div>
+          {statusTone === 'error' && <p className="calendar-preview__error" role="alert">{statusMessage}</p>}
+          {restoreFailed && <div role="alert"><p>{saveMessage}</p><button type="button" onClick={() => setRestoreAttempt(n => n + 1)}>Retry saved calendars</button></div>}
         </Card>
-        <CalendarInputCard
-          rows={calendarRows}
-          isLoading={isLoading}
-          disabled={restoring || saving || restoreFailed}
-          saving={saving}
-          saveMessage={restoring ? 'Loading saved calendars...' : saveMessage}
-          onSave={handleSave}
-          onAddRow={handleAddRow}
-          onRemoveRow={handleRemoveRow}
-          onChangeRow={handleChangeRow}
-          onResolveRow={handleResolveRow}
-          onSubmit={handleSubmit}
-        />
 
-        {restoreFailed && <button type="button" onClick={() => setRestoreAttempt(n => n + 1)}>Retry saved calendars</button>}
-        <StatusCard statusTone={statusTone} statusMessage={statusMessage} activeMode={loadMode} calendarLoads={calendarLoads} />
-        <SummaryCard summary={events.length ? summary : EMPTY_SUMMARY} />
-        <SampleEventCard event={events[0] ?? null} />
-        <EventListCard events={events} />
+        <details className="calendar-settings" open={settingsOpen} onToggle={event => setSettingsOpen(event.currentTarget.open)}>
+          <summary>Calendar settings <span>Add, edit or remove calendars</span></summary>
+          <CalendarInputCard
+            rows={calendarRows} isLoading={isLoading} disabled={restoring || saving || restoreFailed}
+            saving={saving} saveMessage={restoring ? 'Loading saved calendars...' : saveMessage}
+            onSave={handleSave} onAddRow={handleAddRow} onRemoveRow={handleRemoveRow}
+            onChangeRow={handleChangeRow} onResolveRow={handleResolveRow}
+          />
+        </details>
+
+        {selectedCalendarId && <>
+          <SummaryCard count={visibleEvents.length} minutes={timedMinutes(visibleEvents)} from={range.from} to={range.to} onRangeChange={(from, to) => setRange({ from, to })} />
+          <EventListCard key={selectedCalendarId} events={visibleEvents} loading={isLoading} emptyMessage={statusTone === 'error' ? 'Events could not be loaded. Try refreshing this calendar.' : range.from && range.to && range.from > range.to ? 'Choose a valid date range above.' : events.length ? 'No events in this date range. Try All dates or choose another range.' : 'This calendar has no events to display.'} />
+        </>}
       </div>
     </main>
   );

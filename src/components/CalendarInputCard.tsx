@@ -12,7 +12,6 @@ interface CalendarInputCardProps {
   onRemoveRow: (id: string) => void;
   onChangeRow: (id: string, nextUrl: string) => void;
   onResolveRow: (id: string, pastedUrl?: string) => void;
-  onSubmit: () => void;
 }
 
 export function CalendarInputCard({
@@ -25,13 +24,12 @@ export function CalendarInputCard({
   onAddRow,
   onRemoveRow,
   onChangeRow,
-  onResolveRow,
-  onSubmit
+  onResolveRow
 }: CalendarInputCardProps) {
   return (
     <Card
-      title="Calendar URLs"
-      subtitle="Paste one public calendar URL per field. The app will normalize webcal to https and try to detect the calendar name."
+      title="Manage calendars"
+      subtitle="Add a public Apple calendar URL, or update and remove an existing calendar."
       actions={
         <button type="button" className="secondary-button" disabled={disabled || isLoading} onClick={onAddRow}>
           + Add Calendar
@@ -42,7 +40,7 @@ export function CalendarInputCard({
         className="url-form"
         onSubmit={(event) => {
           event.preventDefault();
-          onSubmit();
+          onSave();
         }}
       >
         <div className="calendar-input-list">
@@ -85,21 +83,14 @@ export function CalendarInputCard({
                       : row.calendarName ?? (row.previewError ? 'Could not detect name' : 'Waiting for URL')}
                   </strong>
                 </div>
-                <div>
-                  <span className="calendar-preview__label">Normalized URL</span>
-                  <code>{row.normalizedUrl ?? 'Not normalized yet'}</code>
-                </div>
                 {row.previewError ? <p className="calendar-preview__error">{row.previewError}</p> : null}
               </div>
             </article>
           ))}
         </div>
 
-        <button type="submit" disabled={isLoading || disabled}>
-          {isLoading ? 'Loading...' : 'Load Calendars'}
-        </button>
-        <button type="button" className="secondary-button" disabled={disabled || isLoading || rows.some(row => row.isResolving)} onClick={onSave}>{saving ? 'Saving...' : 'Save Calendars'}</button>
-        <p className="hint">Save Calendars saves additions, edits, and removals. Load Calendars refreshes events.</p>
+        <button type="submit" disabled={disabled || isLoading || rows.some(row => row.isResolving)}>{saving ? 'Saving...' : 'Save calendars'}</button>
+        <p className="hint">Changes, including removals, take effect when you save. This does not delete calendars from Apple.</p>
         {saveMessage && <p role="status">{saveMessage}</p>}
       </form>
     </Card>

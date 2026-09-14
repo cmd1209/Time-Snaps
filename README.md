@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Paste a public iCloud calendar sharing URL (`webcal://...` or `https://...`), let the app detect its name, then select **Load Calendars**. Add more fields for multiple feeds.
+Paste a public iCloud calendar sharing URL (`webcal://...` or `https://...`), let the app detect its name, save it, then select it from the saved-calendar dropdown. Add more fields for multiple feeds.
 
 The browser first tries the feed directly. If that fails (for example because of CORS), it posts the URL to `/api/calendar`. Locally, the existing Vite development proxy handles this request. On Vercel, `api/calendar.js` handles it as a Node function.
 
@@ -52,7 +52,7 @@ After deployment, paste a public Apple calendar URL and load it. Verify the dete
 
 The SDK persists the Supabase session in browser localStorage. Passwords are submitted only to Supabase Auth. Calendar metadata lives in `public.calendars`, protected by ownership RLS; there is no profile table. Public feed URLs are visible to their owner, and the underlying published feed remains public. The public calendar-fetch endpoint remains available without login and does not read the database.
 
-Use **Save Calendars** after additions, URL edits, or removals (including removing the final calendar). Saving validates public Apple URLs, upserts rows with stable IDs, then deletes removed IDs. These are two requests, not a transaction: if a request fails, the app reports an incomplete save and keeps edits available for retry. **Load Calendars** fetches fresh events.
+Use **Save Calendars** after additions, URL edits, or removals (including removing the final calendar). Saving validates public Apple URLs, upserts rows with stable IDs, then deletes removed IDs. These are two requests, not a transaction: if a request fails, the app reports an incomplete save and keeps edits available for retry. **Refresh** fetches fresh events for the selected calendar.
 
 ### Account verification
 
@@ -72,4 +72,12 @@ The integration test creates temporary calendar rows and deletes them afterward.
 
 ## Viewing saved calendars
 
-After login or refresh, the first saved calendar loads automatically. Use the **Saved calendars** dropdown to load another calendar's events, or **Refresh selected calendar** to fetch updates. Switching calendars clears the previous results and ignores late responses from earlier selections. The dropdown uses saved metadata; editing the URL fields does not change it until **Save Calendars** succeeds. The existing **Load Calendars** button still loads all filled URL fields together.
+After login or refresh, the first saved calendar loads automatically. Use the **Saved calendars** dropdown to load another calendar's events, or **Refresh** to fetch updates. Switching calendars clears the previous results and ignores late responses from earlier selections. The dropdown uses saved metadata; editing the URL fields does not change it until **Save Calendars** succeeds. Calendar management is available under the collapsible **Calendar settings** section.
+
+## Calendar viewer
+
+The main view shows the selected calendar, a refresh indicator, and events grouped by day in chronological order. Calendar URLs, adding/removing calendars, and saving changes live in **Calendar settings**, which opens automatically for an account with no saved calendars. The account menu contains email and logout.
+
+The date range defaults to **All dates**; use **This month** or set From/To dates to narrow it. Both endpoints are inclusive and match the event's start date in the viewer's local time zone. Events without a start date appear only with All dates. Event count and timed duration reflect the filtered list; all-day events are excluded from timed duration. Expand **Event details** for descriptions and locations. Raw feed URLs, JSON, and fetch diagnostics are no longer part of the event view.
+
+Check date filtering and grouping with `node --test tests/event-view.test.js` (Node 22.18+).
