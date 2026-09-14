@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/types.ts","./src/components/calendarinputcard.tsx","./src/components/card.tsx","./src/components/eventlistcard.tsx","./src/components/sampleeventcard.tsx","./src/components/statuscard.tsx","./src/components/summarycard.tsx","./src/utils/calendar.ts","./src/utils/format.ts"],"version":"5.9.3"}
