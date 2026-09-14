@@ -20,6 +20,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -101,7 +102,8 @@ pre {
   color: #5d6b7c;
 }
 
-.field input {
+.field input,
+.field select {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #c7d2df;

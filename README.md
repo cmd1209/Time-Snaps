@@ -69,3 +69,7 @@ node --env-file=.env.local --test tests/supabase.integration.test.js
 ```
 
 The integration test creates temporary calendar rows and deletes them afterward. Without the four test-account variables it is skipped.
+
+## Viewing saved calendars
+
+After login or refresh, the first saved calendar loads automatically. Use the **Saved calendars** dropdown to load another calendar's events, or **Refresh selected calendar** to fetch updates. Switching calendars clears the previous results and ignores late responses from earlier selections. The dropdown uses saved metadata; editing the URL fields does not change it until **Save Calendars** succeeds. The existing **Load Calendars** button still loads all filled URL fields together.

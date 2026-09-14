@@ -56,3 +56,9 @@ export interface CalendarPreviewResult {
   normalizedUrl: string;
   mode: LoadMode;
 }
+
+export interface SavedCalendar {
+  id: string;
+  name: string;
+  calendar_url: string;
+}

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Card } from './components/Card';
 import { supabase } from './lib/supabase';
 import { CalendarInputCard } from './components/CalendarInputCard';
 import { EventListCard } from './components/EventListCard';
 import { SampleEventCard } from './components/SampleEventCard';
 import { StatusCard } from './components/StatusCard';
 import { SummaryCard } from './components/SummaryCard';
-import { CalendarEvent, CalendarInputRow, CalendarLoadItem, CalendarSummary, LoadMode, StatusTone } from './types';
+import { CalendarEvent, CalendarInputRow, CalendarLoadItem, CalendarSummary, LoadMode, StatusTone, SavedCalendar } from './types';
 import { loadCalendar, loadCalendarPreview, summarizeEvents } from './utils/calendar';
 
 const EMPTY_SUMMARY: CalendarSummary = {
@@ -19,6 +20,9 @@ const EMPTY_SUMMARY: CalendarSummary = {
 interface AppProps { userId: string; email: string; onLogout: () => Promise<void>; logoutError: string }
 
 export default function App({ userId, email, onLogout, logoutError }: AppProps) {
+  const [savedCalendars, setSavedCalendars] = useState<SavedCalendar[]>([]);
+  const [selectedCalendarId, setSelectedCalendarId] = useState('');
+  const loadRequest = useRef(0);
   const savedIds = useRef<string[]>([]);
   const alive = useRef(true);
   const [restoring, setRestoring] = useState(true);
@@ -29,7 +33,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
 
   useEffect(() => {
     alive.current = true;
-    return () => { alive.current = false; };
+    return () => { alive.current = false; loadRequest.current += 1; };
   }, []);
 
   useEffect(() => {
@@ -43,6 +47,8 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
         if (cancelled) return;
         if (error) throw error;
         setSaveMessage('');
+        setSavedCalendars(data);
+        setSelectedCalendarId(data[0]?.id ?? '');
         savedIds.current = data.map(row => row.id);
         setCalendarRows(data.length ? data.map(row => ({
           ...createEmptyRow(), id: row.id, url: row.calendar_url,
@@ -74,6 +80,12 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
   const [statusMessage, setStatusMessage] = useState('Paste a public iCloud calendar URL to detect its name, then load calendars.');
   const [loadMode, setLoadMode] = useState<LoadMode | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Restore the first saved calendar automatically; selecting another fetches its events.
+  useEffect(() => {
+    const selected = savedCalendars.find(calendar => calendar.id === selectedCalendarId);
+    if (selected) void loadRows([{ url: selected.calendar_url }]);
+  }, [savedCalendars, selectedCalendarId]);
 
   const summary = useMemo(() => summarizeEvents(events), [events]);
 
@@ -120,6 +132,17 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
       }
       if (!alive.current) return;
       savedIds.current = [...remaining];
+      setSavedCalendars(rows);
+      setSelectedCalendarId(current => remaining.has(current) ? current : rows[0]?.id ?? '');
+      if (!rows.length) {
+        loadRequest.current += 1;
+        setEvents([]);
+        setCalendarLoads([]);
+        setLoadMode(null);
+        setIsLoading(false);
+        setStatusTone('idle');
+        setStatusMessage('No saved calendars. Add a public calendar URL to get started.');
+      }
       setSaveMessage(`Saved ${rows.length} calendar(s).`);
     } catch (error) {
       if (alive.current) setSaveMessage(`Save incomplete. ${error instanceof Error ? error.message : 'Please retry.'} Your edits are still here; retry Save Calendars.`);
@@ -222,13 +245,22 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
 
   async function handleSubmit() {
     if (isLoading || saving || restoring || restoreFailed) return;
+    setSelectedCalendarId('');
+    await loadRows(calendarRows);
+  }
+
+  async function loadRows(rows: { url: string }[]) {
+    const requestId = ++loadRequest.current;
+    const isCurrent = () => alive.current && requestId === loadRequest.current;
+    setEvents([]);
+    setCalendarLoads([]);
     setIsLoading(true);
     setStatusTone('loading');
     setStatusMessage('Loading calendar feeds...');
     setLoadMode(null);
 
     try {
-      const filledRows = calendarRows.filter((row) => row.url.trim());
+      const filledRows = rows.filter((row) => row.url.trim());
 
       if (filledRows.length === 0) {
         throw new Error('Paste at least one public iCloud calendar URL first.');
@@ -260,6 +292,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
         })
       );
 
+      if (!isCurrent()) return;
       const nextEvents = results.flatMap((result) => result.events);
       const successfulLoads = results.filter((result) => !result.error);
       const failedLoads = results.length - successfulLoads.length;
@@ -281,6 +314,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
           : `Loaded ${successfulLoads.length} calendar(s) and ${nextEvents.length} event(s) successfully.`
       );
     } catch (error) {
+      if (!isCurrent()) return;
       const message = error instanceof Error ? error.message : 'Unexpected calendar loading error.';
 
       setEvents([]);
@@ -289,7 +323,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
       setStatusMessage(message);
       setLoadMode(null);
     } finally {
-      setIsLoading(false);
+      if (isCurrent()) setIsLoading(false);
     }
   }
 
@@ -308,6 +342,25 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
       </header>
 
       <div className="layout-grid">
+        <Card title="Saved calendars" subtitle="Choose a calendar to view its events.">
+          <div className="url-form">
+            <label className="field">
+              <span>Calendar</span>
+              <select
+                value={selectedCalendarId}
+                disabled={restoring || saving || restoreFailed || !savedCalendars.length}
+                onChange={event => setSelectedCalendarId(event.target.value)}
+              >
+                <option value="" disabled>{restoring ? 'Loading saved calendars...' : savedCalendars.length ? 'Select a saved calendar' : 'No saved calendars yet'}</option>
+                {savedCalendars.map(calendar => <option key={calendar.id} value={calendar.id}>{calendar.name}</option>)}
+              </select>
+            </label>
+            <button type="button" className="secondary-button" disabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} onClick={() => {
+              const selected = savedCalendars.find(calendar => calendar.id === selectedCalendarId);
+              if (selected) void loadRows([{ url: selected.calendar_url }]);
+            }}>{isLoading && selectedCalendarId ? 'Loading events...' : 'Refresh selected calendar'}</button>
+          </div>
+        </Card>
         <CalendarInputCard
           rows={calendarRows}
           isLoading={isLoading}
