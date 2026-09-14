@@ -20,7 +20,7 @@ Deploy the repository root, including the `api` directory, through the existing 
 - Framework preset: Vite
 - Build command: `npm run build`
 - Output directory: `dist`
-- No environment variables or additional dependencies are required.
+- Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` before building. Redeploy after changing them.
 
 Push the changes to the branch connected to Vercel to trigger its deployment. Uploading only `dist` will not deploy the calendar function. `npm run preview` also does not run Vercel functions.
 
@@ -38,6 +38,34 @@ After deployment, paste a public Apple calendar URL and load it. Verify the dete
 ## Current limits
 
 - Calendars must be publicly shared. Anyone with the feed URL can access the published data.
-- Calendar URLs and events remain in browser memory and reset on refresh. Authentication and saved calendars through Supabase are a later step.
+- Calendar names and public URLs are saved per account when you click **Save Calendars**. Events are fetched on demand and remain in memory. Unsaved edits reset on refresh.
 - Repeating event definitions are parsed but not expanded into individual occurrences.
 - Apple can still return unavailable, revoked, or slow feeds; the app shows an error for each failed calendar.
+
+## Supabase setup
+
+1. Create a Supabase project and enable email/password authentication. Keep email confirmation enabled.
+2. In Authentication → URL Configuration, set the Site URL to `https://time-snaps.vercel.app` and allow `https://time-snaps.vercel.app/` and `http://localhost:5173/` as redirect URLs.
+3. Run `supabase/migrations/001_create_calendars.sql` once in the SQL Editor for a new project. It has already been applied to the initial project; do not rerun it there.
+4. Copy `.env.example` to `.env.local` and enter the project URL and publishable key. Add those same variables in Vercel for Production (and Preview if used). Never use a secret/service-role key here.
+5. Run `npm install` and `npm run dev`. Sign up, confirm your email, then log in.
+
+The SDK persists the Supabase session in browser localStorage. Passwords are submitted only to Supabase Auth. Calendar metadata lives in `public.calendars`, protected by ownership RLS; there is no profile table. Public feed URLs are visible to their owner, and the underlying published feed remains public. The public calendar-fetch endpoint remains available without login and does not read the database.
+
+Use **Save Calendars** after additions, URL edits, or removals (including removing the final calendar). Saving validates public Apple URLs, upserts rows with stable IDs, then deletes removed IDs. These are two requests, not a transaction: if a request fails, the app reports an incomplete save and keeps edits available for retry. **Load Calendars** fetches fresh events.
+
+### Account verification
+
+- Sign up and confirm email; check invalid-password feedback.
+- Save a calendar, refresh, and verify that both session and saved URL return.
+- Update a URL, save, refresh; remove the final calendar, save, refresh.
+- Log out and check the viewer disappears; log in again and check saved data returns.
+- Use two test accounts to verify ownership, including direct API reads, inserts, updates, and deletes. The integration test below exercises those checks using existing accounts; it never creates accounts or sends email.
+
+```bash
+# Set TEST_USER_A_EMAIL, TEST_USER_A_PASSWORD, TEST_USER_B_EMAIL,
+# and TEST_USER_B_PASSWORD privately in your shell, then run:
+node --env-file=.env.local --test tests/supabase.integration.test.js
+```
+
+The integration test creates temporary calendar rows and deletes them afterward. Without the four test-account variables it is skipped.

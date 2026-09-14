@@ -4,16 +4,24 @@ import { CalendarInputRow } from '../types';
 interface CalendarInputCardProps {
   rows: CalendarInputRow[];
   isLoading: boolean;
+  disabled: boolean;
+  saving: boolean;
+  saveMessage: string;
+  onSave: () => void;
   onAddRow: () => void;
   onRemoveRow: (id: string) => void;
   onChangeRow: (id: string, nextUrl: string) => void;
-  onResolveRow: (id: string) => void;
+  onResolveRow: (id: string, pastedUrl?: string) => void;
   onSubmit: () => void;
 }
 
 export function CalendarInputCard({
   rows,
   isLoading,
+  disabled,
+  saving,
+  saveMessage,
+  onSave,
   onAddRow,
   onRemoveRow,
   onChangeRow,
@@ -25,7 +33,7 @@ export function CalendarInputCard({
       title="Calendar URLs"
       subtitle="Paste one public calendar URL per field. The app will normalize webcal to https and try to detect the calendar name."
       actions={
-        <button type="button" className="secondary-button" onClick={onAddRow}>
+        <button type="button" className="secondary-button" disabled={disabled || isLoading} onClick={onAddRow}>
           + Add Calendar
         </button>
       }
@@ -42,26 +50,26 @@ export function CalendarInputCard({
             <article className="calendar-input-row" key={row.id}>
               <div className="calendar-input-row__header">
                 <strong>Calendar {index + 1}</strong>
-                {rows.length > 1 ? (
                   <button
                     type="button"
                     className="ghost-button"
-                    onClick={() => onRemoveRow(row.id)}
+                    disabled={disabled || isLoading} onClick={() => onRemoveRow(row.id)}
                     aria-label={`Remove calendar ${index + 1}`}
                   >
                     Remove
                   </button>
-                ) : null}
               </div>
 
               <label className="field">
                 <span>Public calendar URL</span>
                 <input
+                  disabled={disabled || isLoading}
                   type="url"
                   value={row.url}
                   onChange={(inputEvent) => onChangeRow(row.id, inputEvent.target.value)}
-                  onPaste={() => {
-                    window.setTimeout(() => onResolveRow(row.id), 0);
+                  onPaste={event => {
+                    const input = event.currentTarget;
+                    window.setTimeout(() => onResolveRow(row.id, input.value), 0);
                   }}
                   onBlur={() => onResolveRow(row.id)}
                   placeholder="webcal://..."
@@ -87,9 +95,12 @@ export function CalendarInputCard({
           ))}
         </div>
 
-        <button type="submit" disabled={isLoading}>
+        <button type="submit" disabled={isLoading || disabled}>
           {isLoading ? 'Loading...' : 'Load Calendars'}
         </button>
+        <button type="button" className="secondary-button" disabled={disabled || isLoading || rows.some(row => row.isResolving)} onClick={onSave}>{saving ? 'Saving...' : 'Save Calendars'}</button>
+        <p className="hint">Save Calendars saves additions, edits, and removals. Load Calendars refreshes events.</p>
+        {saveMessage && <p role="status">{saveMessage}</p>}
       </form>
     </Card>
   );
