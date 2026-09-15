@@ -8,10 +8,10 @@ interface CardProps extends PropsWithChildren {
 
 export function Card({ title, subtitle, actions, children }: CardProps) {
   return (
-    <section className="card">
-      <div className="card__header">
+    <section className="card bg-surface">
+      <div className="mb-3.5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2>{title}</h2>
+          <h2 className="m-0 text-[1.05rem] font-bold text-ink">{title}</h2>
           {subtitle ? <p className="card__subtitle">{subtitle}</p> : null}
         </div>
         {actions ? <div>{actions}</div> : null}

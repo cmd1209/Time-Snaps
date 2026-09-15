@@ -81,3 +81,19 @@ The main view shows the selected calendar, a refresh indicator, and events group
 The date range defaults to **All dates**; use **This month** or set From/To dates to narrow it. Both endpoints are inclusive and match the event's start date in the viewer's local time zone. Events without a start date appear only with All dates. Event count and timed duration reflect the filtered list; all-day events are excluded from timed duration. Expand **Event details** for descriptions and locations. Raw feed URLs, JSON, and fetch diagnostics are no longer part of the event view.
 
 Check date filtering and grouping with `node --test tests/event-view.test.js` (Node 22.18+).
+
+## Editing styles with Tailwind
+
+Tailwind CSS v4 is installed through `@tailwindcss/vite` in `vite.config.ts`. Run `npm run dev` and edit React `className` values to see changes locally. The existing CSS still works; this is an incremental styling setup.
+
+Good starting points:
+
+- `src/components/Card.tsx`: shared card heading, color, and header spacing.
+- `src/components/EventListCard.tsx`: event duration badge.
+- `src/styles.css`: the `@theme` block at the top defines the shared colors. Change `--color-accent` to change the main button color. Tokens also expose utilities such as `bg-accent`, `bg-accent-soft`, `text-muted`, and `border-line`.
+
+For example, change `gap-3` to `gap-4` for more spacing, or `bg-accent-soft` to `bg-emerald-100` for a green duration badge. For responsive spacing, try `p-4 sm:p-6`. Use complete class names in source code so Tailwind can detect them.
+
+Existing styles are in `@layer components`, allowing Tailwind utilities to override them. Tailwind's Preflight reset is intentionally omitted to preserve the app's current headings, form controls, and native details markers. When styling a new border with utilities, include `border-solid` as well as `border` and a color. No separate Tailwind configuration file or PostCSS dependency is needed.
+
+The TypeScript build regenerates the existing `vite.config.js` from `vite.config.ts`; edit the TypeScript source. Test locally before pushing `main` yourself to trigger Vercel.

@@ -34,7 +34,7 @@ export function EventListCard({ events, loading, emptyMessage }: EventListCardPr
                   <article className="event-row" key={`${event.uid}-${event.start}-${index}`}>
                     <div className="event-row__top">
                       <div><p className="event-time">{timeLabel(event)}</p><h4>{event.title}</h4></div>
-                      {!event.isAllDay && event.durationMinutes !== null && <span className="duration-badge">{formatMinutes(event.durationMinutes)}</span>}
+                      {!event.isAllDay && event.durationMinutes !== null && <span className="self-start whitespace-nowrap rounded-md bg-accent-soft px-[9px] py-1 text-[0.8rem]">{formatMinutes(event.durationMinutes)}</span>}
                     </div>
                     {(event.location || event.description) && (
                       <details className="event-details">

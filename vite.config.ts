@@ -1,4 +1,5 @@
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { IncomingMessage } from 'node:http';
 import { URL } from 'node:url';
 import { defineConfig } from 'vite';
@@ -22,6 +23,7 @@ function readRequestBody(request: IncomingMessage): Promise<string> {
 export default defineConfig({
   plugins: [
     react(),
+    tailwindcss(),
     {
       name: 'calendar-proxy',
       configureServer(server) {
