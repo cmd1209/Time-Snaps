@@ -97,3 +97,20 @@ For example, change `gap-3` to `gap-4` for more spacing, or `bg-accent-soft` to 
 Existing styles are in `@layer components`, allowing Tailwind utilities to override them. Tailwind's Preflight reset is intentionally omitted to preserve the app's current headings, form controls, and native details markers. When styling a new border with utilities, include `border-solid` as well as `border` and a color. No separate Tailwind configuration file or PostCSS dependency is needed.
 
 The TypeScript build regenerates the existing `vite.config.js` from `vite.config.ts`; edit the TypeScript source. Test locally before pushing `main` yourself to trigger Vercel.
+
+## Dashboard layout (layout branch)
+
+The signed-in app opens on **Dashboard**, following the Figma mockup. Use the header calendar selector to choose the primary calendar. **Calendar Settings** opens the existing add/edit/remove form; switching views preserves unsaved edits. **Refresh** reloads the primary calendar and enabled comparisons.
+
+- The four headline statistics apply only to the selected primary calendar.
+- **Total** includes all timed event durations available in that feed, including future scheduled events.
+- **Current month** and **Current week** use event start dates in the viewer's local time zone. Weeks run Monday–Sunday; these totals include scheduled events later in the period.
+- **Monthly average** is the primary calendar's hours across the displayed 6 or 12 months divided by that month count, including empty months and the current month.
+- Add saved calendars with **Compare calendar**. Remove them with their chip's X button. Comparison choices last for the current signed-in app session; no additional Supabase columns are needed.
+- Bars stack calendar hours per month; lines show each calendar separately. Hover a mark for exact hours, or open **View chart data** for the accessible table.
+- All-day events are excluded. Recurring series are still not expanded by the existing parser, as noted on the dashboard.
+- Event details and their independent date filters remain below the charts. These filters do not change dashboard statistics.
+
+`src/views/Dashboard.tsx` contains the dashboard controls, `src/components/DashboardCharts.tsx` the SVG charts, and `src/utils/dashboard.ts` the tested calculations. Only `lucide-react` was added; the charts do not require a library. Edit `--color-dashboard-header` and the `--color-calendar-*` tokens in `src/styles.css` to adjust the Figma colors, and use Tailwind classes for spacing.
+
+Local checks: `npm run build` and `node --test tests/calendar.test.js tests/event-view.test.js tests/dashboard.test.js`. No GitHub push or Vercel deployment is part of local testing.

@@ -5,6 +5,11 @@
 /* Edit these colors to restyle the app. They also create Tailwind utilities
    such as bg-accent, text-ink, border-line, and bg-surface. */
 @theme {
+  --color-dashboard-header: #b29a82;
+  --color-calendar-purple: #c8b7e6;
+  --color-calendar-teal: #8dccc4;
+  --color-calendar-sand: #b09b80;
+  --color-calendar-peach: #e6b2a4;
   --color-accent: #1268db;
   --color-accent-soft: #eef4fb;
   --color-page: var(--color-zinc-200);

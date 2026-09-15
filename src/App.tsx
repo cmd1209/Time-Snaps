@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Card } from './components/Card';
+import { CalendarDays, CircleGauge, Settings, RefreshCcw, LogOut } from 'lucide-react';
+import { Dashboard } from './views/Dashboard';
 import { supabase } from './lib/supabase';
 import { CalendarInputCard } from './components/CalendarInputCard';
 import { EventListCard } from './components/EventListCard';
@@ -21,7 +22,8 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [restoreAttempt, setRestoreAttempt] = useState(0);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [view, setView] = useState<'dashboard' | 'settings'>('dashboard');
+  const [refreshToken, setRefreshToken] = useState(0);
   const [range, setRange] = useState({ from: '', to: '' });
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
@@ -43,7 +45,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
         setSaveMessage('');
         setSavedCalendars(data);
         setSelectedCalendarId(data[0]?.id ?? '');
-        setSettingsOpen(data.length === 0);
+        setView(data.length === 0 ? 'settings' : 'dashboard');
         savedIds.current = data.map(row => row.id);
         setCalendarRows(data.length ? data.map(row => ({
           ...createEmptyRow(), id: row.id, url: row.calendar_url,
@@ -311,56 +313,70 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
     }
   }
 
-  return (
-    <main className="app-shell">
-      <header className="app-header viewer-header">
-        <div><p className="eyebrow">Your time, at a glance</p><h1>Time Snaps</h1></div>
-        <details className="account-menu">
-          <summary>Account</summary>
-          <div className="account-panel">
-            <p>{email}</p>
-            <button type="button" className="secondary-button" disabled={saving} onClick={() => void onLogout()}>Log out</button>
-          </div>
-        </details>
-      </header>
-      {logoutError && <p role="alert">{logoutError}</p>}
+  function refreshCalendars() {
+    if (!selectedCalendar || isLoading) return;
+    setRefreshToken(value => value + 1);
+    void loadRows([{ url: selectedCalendar.calendar_url }]);
+  }
 
-      <div className="layout-grid">
-        <Card title={selectedCalendar?.name ?? 'Your calendars'}>
-          <div className="calendar-toolbar">
-            <label className="field">
-              <span>Saved calendar</span>
-              <select value={selectedCalendarId} disabled={restoring || saving || restoreFailed || !savedCalendars.length} onChange={event => setSelectedCalendarId(event.target.value)}>
-                <option value="" disabled>{restoring ? 'Loading saved calendars...' : 'No saved calendars yet'}</option>
-                {savedCalendars.map(calendar => <option key={calendar.id} value={calendar.id}>{calendar.name}</option>)}
+  return (
+    <div className="min-h-screen bg-white text-zinc-950">
+      <header className="bg-dashboard-header text-white">
+        <div className="mx-auto max-w-[1240px] px-5 pb-4 pt-6 sm:pt-8">
+          <div className="flex items-start justify-between gap-4">
+            <div><h1 className="m-0 text-2xl font-semibold tracking-tight sm:text-3xl">Time Snaps</h1><p className="m-0 mt-1 text-sm">Your time, at a glance</p></div>
+            <details className="relative shrink-0">
+              <summary className="flex size-9 list-none items-center justify-center rounded-full bg-cyan-100 text-sm font-medium text-cyan-700 [&::-webkit-details-marker]:hidden" aria-label="Account menu">{email.slice(0, 1).toUpperCase() || 'A'}</summary>
+              <div className="account-panel text-ink">
+                <p>{email}</p>
+                <button type="button" className="secondary-button flex items-center gap-2" disabled={saving} onClick={() => void onLogout()}><LogOut size={16} aria-hidden="true" />Log out</button>
+              </div>
+            </details>
+          </div>
+          <nav className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm" aria-label="Calendar navigation">
+            <label className="flex max-w-full min-w-0 items-center gap-2">
+              <CalendarDays size={18} aria-hidden="true" className="shrink-0" />
+              <span className="sr-only">Selected calendar</span>
+              <select className="max-w-[min(70vw,320px)] min-w-0 cursor-pointer border-0 bg-transparent py-2 text-sm text-white" value={selectedCalendarId} disabled={restoring || saving || restoreFailed || !savedCalendars.length} onChange={event => setSelectedCalendarId(event.target.value)}>
+                <option value="" disabled className="bg-white text-zinc-900">{restoring ? 'Loading calendars...' : 'No saved calendars'}</option>
+                {savedCalendars.map(calendar => <option className="bg-white text-zinc-900" value={calendar.id} key={calendar.id}>{calendar.name}</option>)}
               </select>
             </label>
-            <button type="button" className="secondary-button" disabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} onClick={() => {
-              if (selectedCalendar) void loadRows([{ url: selectedCalendar.calendar_url }]);
-            }}>{isLoading ? 'Refreshing...' : 'Refresh'}</button>
-          </div>
-          <div className="calendar-feedback" role="status">
-            {restoring ? 'Loading saved calendars...' : isLoading ? 'Fetching the latest events...' : lastRefreshed ? `Last refreshed at ${lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : !savedCalendars.length && !restoreFailed ? 'Add your first calendar in settings below.' : null}
-          </div>
-          {statusTone === 'error' && <p className="calendar-preview__error" role="alert">{statusMessage}</p>}
-          {restoreFailed && <div role="alert"><p>{saveMessage}</p><button type="button" onClick={() => setRestoreAttempt(n => n + 1)}>Retry saved calendars</button></div>}
-        </Card>
+            <button type="button" onClick={() => setView('dashboard')} aria-current={view === 'dashboard' ? 'page' : undefined} className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm text-white hover:bg-white/15 ${view === 'dashboard' ? 'bg-white/15' : 'bg-transparent'}`}><CircleGauge size={18} aria-hidden="true" />Dashboard</button>
+            <button type="button" onClick={() => setView('settings')} aria-current={view === 'settings' ? 'page' : undefined} className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm text-white hover:bg-white/15 ${view === 'settings' ? 'bg-white/15' : 'bg-transparent'}`}><Settings size={18} aria-hidden="true" />Calendar Settings</button>
+            <button type="button" onClick={refreshCalendars} disabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} className="flex items-center gap-2 rounded-md bg-transparent px-2 py-2 text-sm text-white hover:bg-white/15"><RefreshCcw size={18} aria-hidden="true" className={isLoading ? 'motion-safe:animate-spin' : ''} />{isLoading ? 'Refreshing...' : 'Refresh'}</button>
+          </nav>
+        </div>
+      </header>
 
-        <details className="calendar-settings" open={settingsOpen} onToggle={event => setSettingsOpen(event.currentTarget.open)}>
-          <summary>Calendar settings <span>Add, edit or remove calendars</span></summary>
+      <main className="mx-auto max-w-[1240px] px-5 pb-16 pt-6 [overflow-wrap:anywhere]">
+        {logoutError && <p role="alert" className="text-sm text-red-700">{logoutError}</p>}
+        {restoreFailed && <div role="alert" className="mb-4"><p>{saveMessage}</p><button type="button" onClick={() => setRestoreAttempt(n => n + 1)}>Retry saved calendars</button></div>}
+        {statusTone === 'error' && <p className="mb-4 text-sm text-red-700" role="alert">{statusMessage}</p>}
+        <div role="status" className="mb-4 text-xs text-zinc-500">
+          {restoring ? 'Loading saved calendars...' : isLoading ? 'Fetching the latest events...' : lastRefreshed ? `Last refreshed at ${lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : null}
+        </div>
+
+        <div hidden={view !== 'dashboard'}>
+          <Dashboard calendars={savedCalendars} selectedId={selectedCalendarId} events={events} loading={isLoading} failed={statusTone === 'error'} refreshToken={refreshToken} />
+          {selectedCalendarId && <section className="mt-12 grid min-w-0 grid-cols-1 gap-4" aria-label="Selected calendar events">
+            <div><h2 className="m-0 text-lg font-medium">Calendar events</h2><p className="m-0 mt-1 text-sm text-zinc-500">{selectedCalendar?.name} · Date filters below apply to this event list.</p></div>
+            <SummaryCard count={visibleEvents.length} minutes={timedMinutes(visibleEvents)} from={range.from} to={range.to} onRangeChange={(from, to) => setRange({ from, to })} />
+            <EventListCard key={selectedCalendarId} events={visibleEvents} loading={isLoading} emptyMessage={statusTone === 'error' ? 'Events could not be loaded. Try refreshing this calendar.' : range.from && range.to && range.from > range.to ? 'Choose a valid date range above.' : events.length ? 'No events in this date range. Try All dates or choose another range.' : 'This calendar has no events to display.'} />
+          </section>}
+        </div>
+
+        <section hidden={view !== 'settings'} aria-label="Calendar settings">
+          <h2 className="mb-5 mt-0 text-lg font-medium">Calendar Settings</h2>
           <CalendarInputCard
             rows={calendarRows} isLoading={isLoading} disabled={restoring || saving || restoreFailed}
             saving={saving} saveMessage={restoring ? 'Loading saved calendars...' : saveMessage}
             onSave={handleSave} onAddRow={handleAddRow} onRemoveRow={handleRemoveRow}
             onChangeRow={handleChangeRow} onResolveRow={handleResolveRow}
           />
-        </details>
-
-        {selectedCalendarId && <>
-          <SummaryCard count={visibleEvents.length} minutes={timedMinutes(visibleEvents)} from={range.from} to={range.to} onRangeChange={(from, to) => setRange({ from, to })} />
-          <EventListCard key={selectedCalendarId} events={visibleEvents} loading={isLoading} emptyMessage={statusTone === 'error' ? 'Events could not be loaded. Try refreshing this calendar.' : range.from && range.to && range.from > range.to ? 'Choose a valid date range above.' : events.length ? 'No events in this date range. Try All dates or choose another range.' : 'This calendar has no events to display.'} />
-        </>}
-      </div>
-    </main>
+          {selectedCalendarId && <button type="button" className="secondary-button mt-4" onClick={() => setView('dashboard')}>Back to Dashboard</button>}
+        </section>
+      </main>
+    </div>
   );
 }
