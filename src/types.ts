@@ -4,6 +4,7 @@ export type StatusTone = 'idle' | 'loading' | 'success' | 'error';
 
 export interface CalendarInputRow {
   id: string;
+  color: string | null;
   url: string;
   normalizedUrl: string | null;
   calendarName: string | null;
@@ -59,6 +60,7 @@ export interface CalendarPreviewResult {
 
 export interface SavedCalendar {
   id: string;
+  color: string | null;
   name: string;
   calendar_url: string;
 }

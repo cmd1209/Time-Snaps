@@ -38,7 +38,7 @@ After deployment, paste a public Apple calendar URL and load it. Verify the dete
 ## Current limits
 
 - Calendars must be publicly shared. Anyone with the feed URL can access the published data.
-- Calendar names and public URLs are saved per account when you click **Save Calendars**. Events are fetched on demand and remain in memory. Unsaved edits reset on refresh.
+- Calendar names and public URLs are saved per account when you click **Save calendar**. Events are fetched on demand and remain in memory. Unsaved edits reset on refresh.
 - Repeating event definitions are parsed but not expanded into individual occurrences.
 - Apple can still return unavailable, revoked, or slow feeds; the app shows an error for each failed calendar.
 
@@ -52,7 +52,7 @@ After deployment, paste a public Apple calendar URL and load it. Verify the dete
 
 The SDK persists the Supabase session in browser localStorage. Passwords are submitted only to Supabase Auth. Calendar metadata lives in `public.calendars`, protected by ownership RLS; there is no profile table. Public feed URLs are visible to their owner, and the underlying published feed remains public. The public calendar-fetch endpoint remains available without login and does not read the database.
 
-Use **Save Calendars** after additions, URL edits, or removals (including removing the final calendar). Saving validates public Apple URLs, upserts rows with stable IDs, then deletes removed IDs. These are two requests, not a transaction: if a request fails, the app reports an incomplete save and keeps edits available for retry. **Refresh** fetches fresh events for the selected calendar.
+Use the **Save calendar** button on an individual calendar after adding it or editing its URL or color. Only that calendar is validated and saved; other unsaved drafts stay untouched. **Remove** immediately removes that calendar from Time Snaps (not Apple). Failed saves or removals keep the draft and show an error next to its button. **Refresh** fetches fresh events for the selected calendar.
 
 ### Account verification
 
@@ -72,7 +72,7 @@ The integration test creates temporary calendar rows and deletes them afterward.
 
 ## Viewing saved calendars
 
-After login or refresh, the first saved calendar loads automatically. Use the **Saved calendars** dropdown to load another calendar's events, or **Refresh** to fetch updates. Switching calendars clears the previous results and ignores late responses from earlier selections. The dropdown uses saved metadata; editing the URL fields does not change it until **Save Calendars** succeeds. Calendar management is available under the collapsible **Calendar settings** section.
+After login or refresh, the first saved calendar loads automatically. Use the **Saved calendars** dropdown to load another calendar's events, or **Refresh** to fetch updates. Switching calendars clears the previous results and ignores late responses from earlier selections. The dropdown uses saved metadata; editing the URL fields does not change it until **Save calendar** succeeds. Calendar management is available under the collapsible **Calendar settings** section.
 
 ## Calendar viewer
 
@@ -114,3 +114,9 @@ The signed-in app opens on **Dashboard**, following the Figma mockup. Use the he
 `src/views/Dashboard.tsx` contains the dashboard controls, `src/components/DashboardCharts.tsx` the SVG charts, and `src/utils/dashboard.ts` the tested calculations. Only `lucide-react` was added; the charts do not require a library. Edit `--color-dashboard-header` and the `--color-calendar-*` tokens in `src/styles.css` to adjust the Figma colors, and use Tailwind classes for spacing.
 
 Local checks: `npm run build` and `node --test tests/calendar.test.js tests/event-view.test.js tests/dashboard.test.js`. No GitHub push or Vercel deployment is part of local testing.
+
+## Custom calendar colors
+
+Run `supabase/migrations/002_calendar_color.sql` once in the Supabase SQL Editor before using this version. It adds an optional hex color to each calendar; the existing ownership policies continue to protect the row.
+
+In **Calendar Settings**, choose a **Calendar color** and click that calendar’s **Save calendar** button. The color is restored on login and used for that calendar's dashboard chip and both charts. Chip text switches between dark and light for readability. **Use default** returns the calendar to the theme palette. No event or Apple-calendar data is modified.

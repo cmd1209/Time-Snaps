@@ -1,29 +1,32 @@
+import { colorPickerValue } from '../utils/calendarColor';
 import { Card } from './Card';
 import { CalendarInputRow } from '../types';
 
 interface CalendarInputCardProps {
   rows: CalendarInputRow[];
-  isLoading: boolean;
   disabled: boolean;
-  saving: boolean;
-  saveMessage: string;
-  onSave: () => void;
+  pendingCalendar: { id: string; action: 'save' | 'remove' } | null;
+  colorEnabled: boolean;
+  rowMessages: Record<string, string>;
+  onSave: (id: string) => void;
   onAddRow: () => void;
   onRemoveRow: (id: string) => void;
   onChangeRow: (id: string, nextUrl: string) => void;
+  onChangeColor: (id: string, color: string | null) => void;
   onResolveRow: (id: string, pastedUrl?: string) => void;
 }
 
 export function CalendarInputCard({
   rows,
-  isLoading,
   disabled,
-  saving,
-  saveMessage,
+  pendingCalendar,
+  colorEnabled,
+  rowMessages,
   onSave,
   onAddRow,
   onRemoveRow,
   onChangeRow,
+  onChangeColor,
   onResolveRow
 }: CalendarInputCardProps) {
   return (
@@ -31,68 +34,77 @@ export function CalendarInputCard({
       title="Manage calendars"
       subtitle="Add a public Apple calendar URL, or update and remove an existing calendar."
       actions={
-        <button type="button" className="secondary-button" disabled={disabled || isLoading} onClick={onAddRow}>
+        <button type="button" className="secondary-button" disabled={disabled} onClick={onAddRow}>
           + Add Calendar
         </button>
       }
     >
-      <form
-        className="url-form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          onSave();
-        }}
-      >
-        <div className="calendar-input-list">
-          {rows.map((row, index) => (
-            <article className="calendar-input-row" key={row.id}>
-              <div className="calendar-input-row__header">
-                <strong>Calendar {index + 1}</strong>
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    disabled={disabled || isLoading} onClick={() => onRemoveRow(row.id)}
-                    aria-label={`Remove calendar ${index + 1}`}
-                  >
-                    Remove
-                  </button>
-              </div>
+      {!colorEnabled && <p className="hint" role="status">Custom color saving is not set up yet. Your chosen color will stay here while you finish the database setup.</p>}
+      <div className="calendar-input-list">
+        {rows.map((row, index) => (
+          <form className="calendar-input-row" key={row.id} onSubmit={event => { event.preventDefault(); onSave(row.id); }}>
+            <div className="calendar-input-row__header">
+              <strong>Calendar {index + 1}</strong>
+                <button
+                  type="button"
+                  className="ghost-button"
+                  disabled={disabled} onClick={() => onRemoveRow(row.id)}
+                  aria-label={`Remove calendar ${index + 1}`}
+                >
+                  {pendingCalendar?.id === row.id && pendingCalendar.action === 'remove' ? 'Removing...' : 'Remove'}
+                </button>
+            </div>
 
-              <label className="field">
-                <span>Public calendar URL</span>
-                <input
-                  disabled={disabled || isLoading}
-                  type="url"
-                  value={row.url}
-                  onChange={(inputEvent) => onChangeRow(row.id, inputEvent.target.value)}
-                  onPaste={event => {
-                    const input = event.currentTarget;
-                    window.setTimeout(() => onResolveRow(row.id, input.value), 0);
-                  }}
-                  onBlur={() => onResolveRow(row.id)}
-                  placeholder="webcal://..."
-                />
+            <label className="field">
+              <span>Public calendar URL</span>
+              <input
+                disabled={disabled}
+                type="url"
+                required
+                value={row.url}
+                onChange={(inputEvent) => onChangeRow(row.id, inputEvent.target.value)}
+                onPaste={event => {
+                  const input = event.currentTarget;
+                  window.setTimeout(() => onResolveRow(row.id, input.value), 0);
+                }}
+                onBlur={() => onResolveRow(row.id)}
+                placeholder="webcal://..."
+              />
+            </label>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 text-sm">
+                <span>Calendar color</span>
+                <input type="color" className="h-9 w-12 cursor-pointer rounded border border-solid border-zinc-300 bg-white p-1"
+                  aria-label={`Color for ${row.calendarName ?? `Calendar ${index + 1}`}`}
+                  disabled={disabled} value={colorPickerValue(row.color, index)}
+                  onChange={event => onChangeColor(row.id, event.target.value)} />
               </label>
-
-              <div className="calendar-preview">
-                <div>
-                  <span className="calendar-preview__label">Calendar name</span>
-                  <strong>
-                    {row.isResolving
-                      ? 'Detecting...'
-                      : row.calendarName ?? (row.previewError ? 'Could not detect name' : 'Waiting for URL')}
-                  </strong>
-                </div>
-                {row.previewError ? <p className="calendar-preview__error">{row.previewError}</p> : null}
+              <span className="text-xs text-zinc-500">{row.color ?? 'Default palette'}</span>
+              {row.color && <button type="button" className="ghost-button text-xs" disabled={disabled} onClick={() => onChangeColor(row.id, null)}>Use default</button>}
+            </div>
+            <div className="calendar-preview">
+              <div>
+                <span className="calendar-preview__label">Calendar name</span>
+                <strong>
+                  {row.isResolving
+                    ? 'Detecting...'
+                    : row.calendarName ?? (row.previewError ? 'Could not detect name' : 'Waiting for URL')}
+                </strong>
               </div>
-            </article>
-          ))}
-        </div>
+              {row.previewError ? <p className="calendar-preview__error">{row.previewError}</p> : null}
+            </div>
+            <div className="mt-4">
+              <button type="submit" disabled={disabled || row.isResolving || !row.url.trim()}>
+                {pendingCalendar?.id === row.id && pendingCalendar.action === 'save' ? 'Saving...' : 'Save calendar'}
+              </button>
+              {rowMessages[row.id] && <p role="status">{rowMessages[row.id]}</p>}
+            </div>
+          </form>
+        ))}
+      </div>
 
-        <button type="submit" disabled={disabled || isLoading || rows.some(row => row.isResolving)}>{saving ? 'Saving...' : 'Save calendars'}</button>
-        <p className="hint">Changes, including removals, take effect when you save. This does not delete calendars from Apple.</p>
-        {saveMessage && <p role="status">{saveMessage}</p>}
-      </form>
+      <p className="hint">Save each calendar separately. Remove takes effect immediately in Time Snaps and does not delete the calendar from Apple.</p>
     </Card>
   );
 }

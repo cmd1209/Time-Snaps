@@ -15,11 +15,14 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
   const [savedCalendars, setSavedCalendars] = useState<SavedCalendar[]>([]);
   const [selectedCalendarId, setSelectedCalendarId] = useState('');
   const loadRequest = useRef(0);
-  const savedIds = useRef<string[]>([]);
   const alive = useRef(true);
   const [restoring, setRestoring] = useState(true);
   const [restoreFailed, setRestoreFailed] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [colorEnabled, setColorEnabled] = useState(false);
+  const [pendingCalendar, setPendingCalendar] = useState<{ id: string; action: 'save' | 'remove' } | null>(null);
+  const saving = pendingCalendar !== null;
+  const mutationPending = useRef(false);
+  const [rowMessages, setRowMessages] = useState<Record<string, string>>({});
   const [saveMessage, setSaveMessage] = useState('');
   const [restoreAttempt, setRestoreAttempt] = useState(0);
   const [view, setView] = useState<'dashboard' | 'settings'>('dashboard');
@@ -38,23 +41,32 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
       setRestoring(true);
       setRestoreFailed(false);
       try {
-        const { data, error } = await supabase!.from('calendars')
-          .select('id,name,calendar_url').eq('user_id', userId).order('created_at');
+        let supportsColor = true;
+        let result = await supabase!.from('calendars')
+          .select('id,name,calendar_url,color').eq('user_id', userId).order('created_at');
+        // Keep the existing app usable until the optional color migration is applied.
+        if (result.error?.code === '42703' && result.error.message.includes('color')) {
+          supportsColor = false;
+          const fallback = await supabase!.from('calendars')
+            .select('id,name,calendar_url').eq('user_id', userId).order('created_at');
+          result = fallback.error ? fallback : { ...fallback, data: fallback.data.map(row => ({ ...row, color: null })) };
+        }
+        const { data, error } = result;
         if (cancelled) return;
         if (error) throw error;
+        setColorEnabled(supportsColor);
         setSaveMessage('');
         setSavedCalendars(data);
         setSelectedCalendarId(data[0]?.id ?? '');
         setView(data.length === 0 ? 'settings' : 'dashboard');
-        savedIds.current = data.map(row => row.id);
         setCalendarRows(data.length ? data.map(row => ({
           ...createEmptyRow(), id: row.id, url: row.calendar_url,
-          normalizedUrl: row.calendar_url, calendarName: row.name
+          normalizedUrl: row.calendar_url, calendarName: row.name, color: row.color
         })) : [createEmptyRow()]);
       } catch (error) {
         if (cancelled) return;
         setRestoreFailed(true);
-        setSaveMessage(error instanceof Error ? error.message : 'Could not load saved calendars. Please retry.');
+        setSaveMessage(error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Could not load saved calendars. Please retry.');
       } finally { if (!cancelled) setRestoring(false); }
     }
     void restore();
@@ -63,6 +75,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
   const [calendarRows, setCalendarRows] = useState<CalendarInputRow[]>([
     {
       id: crypto.randomUUID(),
+      color: null,
       url: '',
       normalizedUrl: null,
       calendarName: null,
@@ -76,11 +89,19 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
   const [statusMessage, setStatusMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Restore the first saved calendar automatically; selecting another fetches its events.
+  // Metadata-only edits do not need to fetch the selected feed again.
+  const selectedCalendarUrl = savedCalendars.find(calendar => calendar.id === selectedCalendarId)?.calendar_url;
   useEffect(() => {
-    const selected = savedCalendars.find(calendar => calendar.id === selectedCalendarId);
-    if (selected) void loadRows([{ url: selected.calendar_url }]);
-  }, [savedCalendars, selectedCalendarId]);
+    if (selectedCalendarUrl) void loadRows([{ url: selectedCalendarUrl }]);
+    else {
+      loadRequest.current += 1;
+      setEvents([]);
+      setLastRefreshed(null);
+      setIsLoading(false);
+      setStatusTone('idle');
+      setStatusMessage('');
+    }
+  }, [selectedCalendarUrl, selectedCalendarId]);
 
   const visibleEvents = useMemo(() => filterEvents(events, range.from, range.to), [events, range]);
   const selectedCalendar = savedCalendars.find(calendar => calendar.id === selectedCalendarId);
@@ -90,6 +111,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
 
     return {
       id,
+      color: null,
       url: '',
       normalizedUrl: null,
       calendarName: null,
@@ -99,49 +121,58 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
     };
   }
 
-  async function handleSave() {
-    if (saving || restoring || restoreFailed || isLoading || calendarRows.some(row => row.isResolving)) return;
-    setSaving(true);
-    setSaveMessage('');
+  function setRowMessage(rowId: string, message: string) {
+    setRowMessages(current => ({ ...current, [rowId]: message }));
+  }
+
+  async function handleSave(rowId: string) {
+    const row = calendarRows.find(calendar => calendar.id === rowId);
+    if (!row || mutationPending.current || restoring || restoreFailed || row.isResolving) return;
+    mutationPending.current = true;
+    setPendingCalendar({ id: rowId, action: 'save' });
+    setRowMessage(rowId, '');
     try {
-      const rows = calendarRows.filter(row => row.url.trim()).map(row => {
-        const url = new URL(row.url.trim().replace(/^webcal:\/\//, 'https://'));
-        if (url.protocol !== 'https:' || url.username || url.password || url.port ||
-            !/^(?:p\d+-)?(?:calendars|caldav)\.icloud\.com$/.test(url.hostname) ||
-            !url.pathname.startsWith('/published/') || url.search || url.hash) {
-          throw new Error('Save only public Apple/iCloud sharing URLs.');
+      const url = new URL(row.url.trim().replace(/^webcal:\/\//, 'https://'));
+      if (url.protocol !== 'https:' || url.username || url.password || url.port ||
+          !/^(?:p\d+-)?(?:calendars|caldav)\.icloud\.com$/.test(url.hostname) ||
+          !url.pathname.startsWith('/published/') || url.search || url.hash) {
+        throw new Error('Save only public Apple/iCloud sharing URLs.');
+      }
+      const calendar = { id: row.id, user_id: userId, name: row.calendarName ?? 'Unnamed Calendar', calendar_url: url.href, color: row.color };
+      let canSaveColor = colorEnabled;
+      if (!canSaveColor && row.color !== null) {
+        // Retry after the SQL update without losing the user's unsaved color.
+        const { error } = await supabase!.from('calendars').select('color').limit(0);
+        if (error) {
+          if (error.code === '42703' || error.code === 'PGRST204') {
+            throw new Error('Custom colors need the database update first. Run 002_calendar_color.sql in Supabase, then save this calendar again.');
+          }
+          throw error;
         }
-        return { id: row.id, user_id: userId, name: row.calendarName ?? 'Unnamed Calendar', calendar_url: url.href };
-      });
-      const remaining = new Set(rows.map(row => row.id));
-      const removed = savedIds.current.filter(id => !remaining.has(id));
-      // Save first so a failed write never deletes existing calendars. Stable IDs make retries safe.
-      if (rows.length) {
-        const { error } = await supabase!.from('calendars').upsert(rows, { onConflict: 'id' });
-        if (error) throw error;
-        savedIds.current = [...new Set([...savedIds.current, ...remaining])];
+        if (!alive.current) return;
+        canSaveColor = true;
+        setColorEnabled(true);
       }
+      const { color: _color, ...withoutColor } = calendar;
+      const query = supabase!.from('calendars')
+        .upsert(canSaveColor ? calendar : withoutColor, { onConflict: 'id' });
+      const { data, error } = await (canSaveColor
+        ? query.select('id,name,calendar_url,color').single()
+        : query.select('id,name,calendar_url').single());
+      if (error) throw error;
       if (!alive.current) return;
-      if (removed.length) {
-        const { error } = await supabase!.from('calendars').delete().eq('user_id', userId).in('id', removed);
-        if (error) throw error;
-      }
-      if (!alive.current) return;
-      savedIds.current = [...remaining];
-      setSavedCalendars(rows);
-      setSelectedCalendarId(current => remaining.has(current) ? current : rows[0]?.id ?? '');
-      if (!rows.length) {
-        loadRequest.current += 1;
-        setEvents([]);
-        setLastRefreshed(null);
-        setIsLoading(false);
-        setStatusTone('idle');
-        setStatusMessage('No saved calendars. Add a public calendar URL to get started.');
-      }
-      setSaveMessage(`Saved ${rows.length} calendar(s).`);
+      const saved: SavedCalendar = { ...data, color: 'color' in data ? data.color as string | null : null };
+      setSavedCalendars(current => current.some(item => item.id === rowId)
+        ? current.map(item => item.id === rowId ? saved : item)
+        : [...current, saved]);
+      setSelectedCalendarId(current => current || rowId);
+      setRowMessage(rowId, 'Calendar saved.');
     } catch (error) {
-      if (alive.current) setSaveMessage(`Save incomplete. ${error instanceof Error ? error.message : 'Please retry.'} Your edits are still here; retry Save Calendars.`);
-    } finally { if (alive.current) setSaving(false); }
+      if (alive.current) setRowMessage(rowId, `Not saved. ${error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Please retry.'} Your edits are still here.`);
+    } finally {
+      mutationPending.current = false;
+      if (alive.current) setPendingCalendar(null);
+    }
   }
 
   function updateRow(rowId: string, updater: (row: CalendarInputRow) => CalendarInputRow) {
@@ -149,20 +180,43 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
   }
 
   function handleAddRow() {
-    setSaveMessage('Unsaved changes.');
-    setCalendarRows((currentRows) => [...currentRows, createEmptyRow()]);
+    setCalendarRows(currentRows => [...currentRows, createEmptyRow()]);
   }
 
-  function handleRemoveRow(rowId: string) {
-    setSaveMessage('Unsaved changes.');
-    setCalendarRows((currentRows) => {
-      const nextRows = currentRows.filter((row) => row.id !== rowId);
-      return nextRows.length > 0 ? nextRows : [createEmptyRow()];
-    });
+  async function handleRemoveRow(rowId: string) {
+    if (mutationPending.current || restoring || restoreFailed) return;
+    mutationPending.current = true;
+    setPendingCalendar({ id: rowId, action: 'remove' });
+    setRowMessage(rowId, '');
+    try {
+      if (savedCalendars.some(calendar => calendar.id === rowId)) {
+        const { error } = await supabase!.from('calendars').delete().eq('user_id', userId).eq('id', rowId);
+        if (error) throw error;
+      }
+      if (!alive.current) return;
+      const remaining = savedCalendars.filter(calendar => calendar.id !== rowId);
+      setSavedCalendars(remaining);
+      setSelectedCalendarId(current => current === rowId ? remaining[0]?.id ?? '' : current);
+      setCalendarRows(current => {
+        const next = current.filter(row => row.id !== rowId);
+        return next.length ? next : [createEmptyRow()];
+      });
+    } catch (error) {
+      if (alive.current) setRowMessage(rowId, `Could not remove calendar. ${error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Please retry.'}`);
+    } finally {
+      mutationPending.current = false;
+      if (alive.current) setPendingCalendar(null);
+    }
+  }
+
+  function handleChangeColor(rowId: string, color: string | null) {
+    if (color !== null && !/^#[0-9a-f]{6}$/i.test(color)) return;
+    setRowMessage(rowId, 'Unsaved changes.');
+    updateRow(rowId, row => ({ ...row, color }));
   }
 
   function handleChangeRow(rowId: string, nextUrl: string) {
-    setSaveMessage('Unsaved changes.');
+    setRowMessage(rowId, 'Unsaved changes.');
     updateRow(rowId, (row) => ({
       ...row,
       url: nextUrl,
@@ -178,6 +232,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
     const targetRow = calendarRows.find((row) => row.id === rowId);
     const nextUrl = (pastedUrl ?? targetRow?.url ?? '').trim();
 
+    if (targetRow?.normalizedUrl && !targetRow.previewError && nextUrl.replace(/^webcal:\/\//, 'https://') === targetRow.normalizedUrl) return;
     if (!nextUrl) {
       updateRow(rowId, (row) => ({
         ...row,
@@ -369,10 +424,10 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
         <section hidden={view !== 'settings'} aria-label="Calendar settings">
           <h2 className="mb-5 mt-0 text-lg font-medium">Calendar Settings</h2>
           <CalendarInputCard
-            rows={calendarRows} isLoading={isLoading} disabled={restoring || saving || restoreFailed}
-            saving={saving} saveMessage={restoring ? 'Loading saved calendars...' : saveMessage}
+            rows={calendarRows} disabled={restoring || saving || restoreFailed}
+            pendingCalendar={pendingCalendar} colorEnabled={restoring || colorEnabled} rowMessages={rowMessages}
             onSave={handleSave} onAddRow={handleAddRow} onRemoveRow={handleRemoveRow}
-            onChangeRow={handleChangeRow} onResolveRow={handleResolveRow}
+            onChangeRow={handleChangeRow} onChangeColor={handleChangeColor} onResolveRow={handleResolveRow}
           />
           {selectedCalendarId && <button type="button" className="secondary-button mt-4" onClick={() => setView('dashboard')}>Back to Dashboard</button>}
         </section>

@@ -3,10 +3,9 @@ import { Plus, X } from 'lucide-react';
 import type { CalendarEvent, SavedCalendar } from '../types';
 import { loadCalendar } from '../utils/calendar';
 import { dashboardMonths, dashboardStats, formatHours } from '../utils/dashboard';
+import { calendarColor, calendarTextColor } from '../utils/calendarColor';
 import { DashboardCharts } from '../components/DashboardCharts';
 
-// Color order matches the Figma palette and stays tied to each saved calendar.
-const colors = ['var(--color-calendar-purple)', 'var(--color-calendar-teal)', 'var(--color-calendar-sand)', 'var(--color-calendar-peach)'];
 interface Props {
   calendars: SavedCalendar[];
   selectedId: string;
@@ -29,7 +28,7 @@ export function Dashboard({ calendars, selectedId, events, loading, failed, refr
     return () => window.clearInterval(timer);
   }, []);
   const selected = calendars.find(calendar => calendar.id === selectedId);
-  const color = (id: string) => colors[Math.max(0, calendars.findIndex(calendar => calendar.id === id)) % colors.length];
+  const color = (id: string) => calendarColor(calendars.find(calendar => calendar.id === id)?.color, calendars.findIndex(calendar => calendar.id === id));
   const months = useMemo(() => dashboardMonths(now, monthCount), [now, monthCount]);
   const stats = useMemo(() => dashboardStats(events, months, now), [events, months, now]);
   const extraCalendars = calendars.filter(calendar => comparisonIds.includes(calendar.id) && calendar.id !== selectedId);
@@ -73,8 +72,8 @@ export function Dashboard({ calendars, selectedId, events, loading, failed, refr
     <div className="flex flex-wrap items-center justify-between gap-4 border-0 border-b border-solid border-zinc-200 pb-5">
       <h2 id="dashboard-heading" className="m-0 text-lg font-medium">Dashboard</h2>
       <div className="flex min-w-0 flex-wrap items-center gap-2" aria-label="Calendars in chart">
-        {selected && <span className="max-w-full rounded-full px-3 py-1.5 text-xs font-medium text-zinc-950" style={{ background: color(selected.id) }}>{selected.name}<span className="sr-only"> (selected calendar)</span></span>}
-        {extraCalendars.map(calendar => <button type="button" key={calendar.id} className="flex max-w-full items-center gap-2 rounded-full px-3 py-1.5 text-xs text-zinc-950" style={{ background: color(calendar.id) }} onClick={() => setComparisonIds(ids => ids.filter(id => id !== calendar.id))} aria-label={`Remove ${calendar.name} from comparison`}>
+        {selected && <span className="max-w-full rounded-full px-3 py-1.5 text-xs font-medium text-zinc-950" style={{ background: color(selected.id), color: calendarTextColor(selected.color) }}>{selected.name}<span className="sr-only"> (selected calendar)</span></span>}
+        {extraCalendars.map(calendar => <button type="button" key={calendar.id} className="flex max-w-full items-center gap-2 rounded-full px-3 py-1.5 text-xs text-zinc-950" style={{ background: color(calendar.id), color: calendarTextColor(calendar.color) }} onClick={() => setComparisonIds(ids => ids.filter(id => id !== calendar.id))} aria-label={`Remove ${calendar.name} from comparison`}>
           <span>{calendar.name}</span><X size={13} aria-hidden="true" className="shrink-0" />
         </button>)}
         {available.length > 0 && <label className="flex items-center gap-1 text-xs text-zinc-600"><Plus size={14} aria-hidden="true" /><span className="sr-only">Add calendar to compare</span><select className="max-w-48 min-w-0 rounded-md border border-solid border-zinc-200 bg-white px-2 py-1.5 text-xs text-zinc-700" value="" onChange={event => { const id = event.target.value; setComparisonIds(ids => [...ids, id]); }}>
