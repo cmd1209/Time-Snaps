@@ -58,7 +58,7 @@ pre {
 }
 
 .app-shell {
-  max-width: 1120px;
+  max-width: 1280px;
   overflow-wrap: anywhere;
   margin: 0 auto;
   padding: 32px 20px 64px;
@@ -81,6 +81,89 @@ pre {
   background-repeat: repeat, no-repeat, no-repeat, no-repeat;
   /* Blend only the pattern at full opacity; keep the mesh layers unchanged. */
   background-blend-mode: multiply, normal, normal, normal;
+}
+
+/* Revised Figma header: shared 4/8/16/24px spacing and transparent controls. */
+.header-container {
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: 24px 24px 8px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.header-logo { width: 200px; max-width: calc(100% - 80px); height: auto; }
+.header-avatar { width: 64px; height: 64px; }
+.header-navigation {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 24px 16px;
+  font-size: 16px;
+}
+.header-calendar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  width: fit-content;
+  max-width: 100%;
+  position: relative;
+  padding: 6px 2px;
+}
+.header-calendar select {
+  appearance: none;
+  min-width: 0;
+  max-width: 360px;
+  padding: 0 28px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+.header-calendar option { background: white; color: var(--color-ink); }
+.header-calendar-chevron { position: absolute; right: 2px; pointer-events: none; }
+.header-actions, .header-views { display: flex; flex-direction: column; gap: 8px; }
+.header-views { align-items: flex-end; }
+.header-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-block: 6px;
+  padding-inline: 8px;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  line-height: 24px;
+  text-align: left;
+}
+.header-navigation svg { flex-shrink: 0; }
+.header-button:hover:not(:disabled),
+.header-button[aria-current="page"] {
+  background: rgb(255 255 255 / 15%);
+}
+.header-button:active:not(:disabled) {
+  background: rgb(255 255 255 / 25%);
+}
+.header-button:disabled { cursor: default; text-decoration: none; }
+@media (min-width: 1024px) {
+  .header-container { padding-bottom: 24px; gap: 32px; }
+  .header-logo { width: 275px; }
+  .header-avatar { width: 90px; height: 90px; }
+  .header-navigation { grid-template-columns: minmax(0, auto) auto 1fr; gap: 24px; align-items: center; }
+  .header-calendar { grid-column: auto; }
+  .header-actions, .header-views { flex-direction: row; gap: 24px; }
+  .header-views { justify-content: flex-end; }
 }
 
 .eyebrow {

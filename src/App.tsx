@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, CircleGauge, Settings, RefreshCcw } from 'lucide-react';
+import { CalendarDays, ChevronDown, CircleGauge, Info, Settings, RefreshCcw } from 'lucide-react';
 import { Dashboard } from './views/Dashboard';
 import { supabase } from './lib/supabase';
 import { AccountMenu } from './components/AccountMenu';
@@ -26,7 +26,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
   const [rowMessages, setRowMessages] = useState<Record<string, string>>({});
   const [saveMessage, setSaveMessage] = useState('');
   const [restoreAttempt, setRestoreAttempt] = useState(0);
-  const [view, setView] = useState<'dashboard' | 'settings'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'details' | 'settings'>('dashboard');
   const [refreshToken, setRefreshToken] = useState(0);
   const [range, setRange] = useState({ from: '', to: '' });
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
@@ -378,25 +378,29 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
   return (
     <div className="min-h-screen bg-white text-zinc-950">
       <header className="dashboard-header text-white">
-        <div className="mx-auto max-w-[1240px] px-5 pb-4 pt-6 sm:pt-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <img src="/assets/logo.svg" className="h-16 w-auto" alt="Time Snaps" />
-            </div>
+        <div className="header-container">
+          <div className="header-top">
+            <img src="/assets/logo.svg" className="header-logo w-52" alt="Time Snaps" />
             <AccountMenu key={userId} userId={userId} email={email} disabled={saving} onLogout={onLogout} />
           </div>
-          <nav className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm" aria-label="Calendar navigation">
-            <label className="flex max-w-full min-w-0 items-center gap-2">
-              <CalendarDays size={18} aria-hidden="true" className="shrink-0" />
+          <nav className="header-navigation" aria-label="Calendar navigation">
+            <label className="header-calendar">
+              <CalendarDays size={24} aria-hidden="true" />
               <span className="sr-only">Selected calendar</span>
-              <select className="max-w-[min(70vw,320px)] min-w-0 cursor-pointer rounded-md border-0 bg-white/15 px-2 py-2 text-sm text-white" value={selectedCalendarId} disabled={restoring || saving || restoreFailed || !savedCalendars.length} onChange={event => setSelectedCalendarId(event.target.value)}>
-                <option value="" disabled className="bg-white text-zinc-900">{restoring ? 'Loading calendars...' : 'No saved calendars'}</option>
-                {savedCalendars.map(calendar => <option className="bg-white text-zinc-900" value={calendar.id} key={calendar.id}>{calendar.name}</option>)}
+              <select value={selectedCalendarId} disabled={restoring || saving || restoreFailed || !savedCalendars.length} onChange={event => setSelectedCalendarId(event.target.value)}>
+                <option value="" disabled>{restoring ? 'Loading calendars...' : 'No saved calendars'}</option>
+                {savedCalendars.map(calendar => <option value={calendar.id} key={calendar.id}>{calendar.name}</option>)}
               </select>
+              <ChevronDown size={24} aria-hidden="true" className="header-calendar-chevron" />
             </label>
-            <button type="button" onClick={() => setView('dashboard')} aria-current={view === 'dashboard' ? 'page' : undefined} className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm text-white hover:bg-white/15 ${view === 'dashboard' ? 'bg-white/15' : 'bg-transparent'}`}><CircleGauge size={18} aria-hidden="true" />Dashboard</button>
-            <button type="button" onClick={() => setView('settings')} aria-current={view === 'settings' ? 'page' : undefined} className={`flex items-center gap-2 rounded-md px-2 py-2 text-sm text-white hover:bg-white/15 ${view === 'settings' ? 'bg-white/15' : 'bg-transparent'}`}><Settings size={18} aria-hidden="true" />Calendar Settings</button>
-            <button type="button" onClick={refreshCalendars} disabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} className="flex items-center gap-2 rounded-md bg-transparent px-2 py-2 text-sm text-white hover:bg-white/15"><RefreshCcw size={18} aria-hidden="true" className={isLoading ? 'motion-safe:animate-spin' : ''} />{isLoading ? 'Refreshing...' : 'Refresh'}</button>
+            <div className="header-actions">
+              <button type="button" onClick={() => setView('settings')} aria-current={view === 'settings' ? 'page' : undefined} className="header-button"><Settings size={24} aria-hidden="true" />Calendar Settings</button>
+              <button type="button" onClick={refreshCalendars} disabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} className="header-button"><RefreshCcw size={24} aria-hidden="true" className={isLoading ? 'motion-safe:animate-spin' : ''} />{isLoading ? 'Refreshing...' : 'Refresh'}</button>
+            </div>
+            <div className="header-views">
+              <button type="button" onClick={() => setView('dashboard')} aria-current={view === 'dashboard' ? 'page' : undefined} className="header-button"><CircleGauge size={24} aria-hidden="true" />Dashboard</button>
+              <button type="button" onClick={() => setView('details')} aria-current={view === 'details' ? 'page' : undefined} className="header-button"><Info size={24} aria-hidden="true" />Details</button>
+            </div>
           </nav>
         </div>
       </header>
@@ -411,12 +415,16 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
 
         <div hidden={view !== 'dashboard'}>
           <Dashboard calendars={savedCalendars} selectedId={selectedCalendarId} events={events} loading={isLoading} failed={statusTone === 'error'} refreshToken={refreshToken} />
-          {selectedCalendarId && <section className="mt-12 grid min-w-0 grid-cols-1 gap-4" aria-label="Selected calendar events">
+        </div>
+
+        <section hidden={view !== 'details'} aria-labelledby="details-heading">
+          <h2 id="details-heading" className="mb-4 mt-0 text-lg font-medium">Details</h2>
+          {selectedCalendarId ? <div className="grid min-w-0 grid-cols-1 gap-4" aria-label="Selected calendar events">
             <div><h2 className="m-0 text-lg font-medium">Calendar events</h2><p className="m-0 mt-1 text-sm text-zinc-500">{selectedCalendar?.name} · Date filters below apply to this event list.</p></div>
             <SummaryCard count={visibleEvents.length} minutes={timedMinutes(visibleEvents)} from={range.from} to={range.to} onRangeChange={(from, to) => setRange({ from, to })} />
             <EventListCard key={selectedCalendarId} events={visibleEvents} loading={isLoading} emptyMessage={statusTone === 'error' ? 'Events could not be loaded. Try refreshing this calendar.' : range.from && range.to && range.from > range.to ? 'Choose a valid date range above.' : events.length ? 'No events in this date range. Try All dates or choose another range.' : 'This calendar has no events to display.'} />
-          </section>}
-        </div>
+          </div> : <p className="py-8 text-sm text-zinc-500">Save a calendar in Calendar Settings to see its details.</p>}
+        </section>
 
         <section hidden={view !== 'settings'} aria-label="Calendar settings">
           <h2 className="mb-5 mt-0 text-lg font-medium">Calendar Settings</h2>
