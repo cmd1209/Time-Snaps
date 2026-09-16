@@ -379,7 +379,9 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
       <header className="bg-dashboard-header text-white">
         <div className="mx-auto max-w-[1240px] px-5 pb-4 pt-6 sm:pt-8">
           <div className="flex items-start justify-between gap-4">
-            <div><h1 className="m-0 text-2xl font-semibold tracking-tight sm:text-3xl">Time Snaps</h1><p className="m-0 mt-1 text-sm">Your time, at a glance</p></div>
+            <div>
+              <img src="/assets/logo.svg" className="h-16 w-auto" alt="Time Snaps" />
+            </div>
             <details className="relative shrink-0">
               <summary className="flex size-9 list-none items-center justify-center rounded-full bg-cyan-100 text-sm font-medium text-cyan-700 [&::-webkit-details-marker]:hidden" aria-label="Account menu">{email.slice(0, 1).toUpperCase() || 'A'}</summary>
               <div className="account-panel text-ink">
@@ -392,7 +394,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
             <label className="flex max-w-full min-w-0 items-center gap-2">
               <CalendarDays size={18} aria-hidden="true" className="shrink-0" />
               <span className="sr-only">Selected calendar</span>
-              <select className="max-w-[min(70vw,320px)] min-w-0 cursor-pointer border-0 bg-transparent py-2 text-sm text-white" value={selectedCalendarId} disabled={restoring || saving || restoreFailed || !savedCalendars.length} onChange={event => setSelectedCalendarId(event.target.value)}>
+              <select className="max-w-[min(70vw,320px)] min-w-0 cursor-pointer rounded-md border-0 bg-white/15 px-2 py-2 text-sm text-white" value={selectedCalendarId} disabled={restoring || saving || restoreFailed || !savedCalendars.length} onChange={event => setSelectedCalendarId(event.target.value)}>
                 <option value="" disabled className="bg-white text-zinc-900">{restoring ? 'Loading calendars...' : 'No saved calendars'}</option>
                 {savedCalendars.map(calendar => <option className="bg-white text-zinc-900" value={calendar.id} key={calendar.id}>{calendar.name}</option>)}
               </select>
