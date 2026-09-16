@@ -377,7 +377,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
 
   return (
     <div className="min-h-screen bg-white text-zinc-950">
-      <header className="bg-dashboard-header text-white">
+      <header className="dashboard-header text-white">
         <div className="mx-auto max-w-[1240px] px-5 pb-4 pt-6 sm:pt-8">
           <div className="flex items-start justify-between gap-4">
             <div>

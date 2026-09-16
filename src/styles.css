@@ -5,7 +5,10 @@
 /* Edit these colors to restyle the app. They also create Tailwind utilities
    such as bg-accent, text-ink, border-line, and bg-surface. */
 @theme {
-  --color-dashboard-header: #b29a82;
+  --color-dashboard-header: #1129a2;
+  --color-header-cyan: #339BC3;
+  --color-header-pink: #af5bc8;
+  --color-header-violet: #7442e9;
   --color-calendar-purple: #c8b7e6;
   --color-calendar-teal: #8dccc4;
   --color-calendar-sand: #b09b80;
@@ -63,6 +66,21 @@ pre {
 
 .app-header {
   margin-bottom: 24px;
+}
+
+/* Figma header-blue (17:97), translated from its 2874 × 230 frame.
+   Percentage ellipses keep the cyan/pink/violet mesh responsive.
+   The two slightly rotated Figma fills are approximated by unrotated ellipses. */
+.dashboard-header {
+  background-color: var(--color-dashboard-header);
+  background-image:
+    url('/assets/y-so-serious-white.png'),
+    radial-gradient(ellipse 60% 697.87% at 33.25% 71.53%, var(--color-header-cyan) 0%, transparent 100%),
+    radial-gradient(ellipse 43.65% 507.68% at 63.74% 83.91%, var(--color-header-pink) 0%, transparent 100%),
+    radial-gradient(ellipse 42.11% 489.79% at 22.96% 23.91%, var(--color-header-violet) 0%, transparent 100%);
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat;
+  /* Blend only the pattern at full opacity; keep the mesh layers unchanged. */
+  background-blend-mode: multiply, normal, normal, normal;
 }
 
 .eyebrow {
