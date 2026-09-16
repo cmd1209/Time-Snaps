@@ -120,3 +120,12 @@ Local checks: `npm run build` and `node --test tests/calendar.test.js tests/even
 Run `supabase/migrations/002_calendar_color.sql` once in the Supabase SQL Editor before using this version. It adds an optional hex color to each calendar; the existing ownership policies continue to protect the row.
 
 In **Calendar Settings**, choose a **Calendar color** and click that calendar’s **Save calendar** button. The color is restored on login and used for that calendar's dashboard chip and both charts. Chip text switches between dark and light for readability. **Use default** returns the calendar to the theme palette. No event or Apple-calendar data is modified.
+
+
+## Account avatars
+
+Run `supabase/migrations/003_avatars.sql` once in the Supabase SQL Editor. This creates a private `avatars` Storage bucket and policies restricting each signed-in user to their own `<user-id>/avatar` object. No profile table, public URL, service-role key, or new environment variable is needed. The bucket enforces a 2 MB limit and JPEG, PNG, or WebP content types.
+
+Open the account menu in the top-right corner and choose **Upload avatar**. Uploads save immediately; **Change avatar** replaces the existing image and **Remove avatar** restores the initial. The app downloads the image through the authenticated Storage client on login, displays a temporary browser blob URL, and releases it on replacement or unmount. Failed operations keep the previous avatar and show an error.
+
+After applying the SQL, verify upload, replacement, refresh/login persistence, and removal using your test account. Verify a second account cannot read or overwrite the first account's avatar. Live Storage checks require the migration and authenticated test accounts.

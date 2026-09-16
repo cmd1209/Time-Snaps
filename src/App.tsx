@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, CircleGauge, Settings, RefreshCcw, LogOut } from 'lucide-react';
+import { CalendarDays, CircleGauge, Settings, RefreshCcw } from 'lucide-react';
 import { Dashboard } from './views/Dashboard';
 import { supabase } from './lib/supabase';
+import { AccountMenu } from './components/AccountMenu';
 import { CalendarInputCard } from './components/CalendarInputCard';
 import { EventListCard } from './components/EventListCard';
 import { SummaryCard } from './components/SummaryCard';
@@ -382,13 +383,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
             <div>
               <img src="/assets/logo.svg" className="h-16 w-auto" alt="Time Snaps" />
             </div>
-            <details className="relative shrink-0">
-              <summary className="flex size-9 list-none items-center justify-center rounded-full bg-cyan-100 text-sm font-medium text-cyan-700 [&::-webkit-details-marker]:hidden" aria-label="Account menu">{email.slice(0, 1).toUpperCase() || 'A'}</summary>
-              <div className="account-panel text-ink">
-                <p>{email}</p>
-                <button type="button" className="secondary-button flex items-center gap-2" disabled={saving} onClick={() => void onLogout()}><LogOut size={16} aria-hidden="true" />Log out</button>
-              </div>
-            </details>
+            <AccountMenu key={userId} userId={userId} email={email} disabled={saving} onLogout={onLogout} />
           </div>
           <nav className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm" aria-label="Calendar navigation">
             <label className="flex max-w-full min-w-0 items-center gap-2">
