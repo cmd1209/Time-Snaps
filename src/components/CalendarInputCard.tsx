@@ -40,10 +40,10 @@ export function CalendarInputCard({
       }
     >
       {!colorEnabled && <p className="hint" role="status">Custom color saving is not set up yet. Your chosen color will stay here while you finish the database setup.</p>}
-      <div className="calendar-input-list">
+      <div className="grid grid-cols-1 gap-3">
         {rows.map((row, index) => (
-          <form className="calendar-input-row" key={row.id} onSubmit={event => { event.preventDefault(); onSave(row.id); }}>
-            <div className="calendar-input-row__header">
+          <form className="calendar-input-row p-3.5" key={row.id} onSubmit={event => { event.preventDefault(); onSave(row.id); }}>
+            <div className="mb-3 flex items-center justify-between gap-3">
               <strong>Calendar {index + 1}</strong>
                 <button
                   type="button"
@@ -55,7 +55,7 @@ export function CalendarInputCard({
                 </button>
             </div>
 
-            <label className="field">
+            <label className="field grid grid-cols-1 gap-2">
               <span>Public calendar URL</span>
               <input
                 disabled={disabled}
@@ -83,9 +83,9 @@ export function CalendarInputCard({
               <span className="text-xs text-zinc-500">{row.color ?? 'Default palette'}</span>
               {row.color && <button type="button" className="ghost-button text-xs" disabled={disabled} onClick={() => onChangeColor(row.id, null)}>Use default</button>}
             </div>
-            <div className="calendar-preview">
+            <div className="calendar-preview mt-3 grid grid-cols-1 gap-2.5">
               <div>
-                <span className="calendar-preview__label">Calendar name</span>
+                <span className="calendar-preview__label mb-1 block">Calendar name</span>
                 <strong>
                   {row.isResolving
                     ? 'Detecting...'

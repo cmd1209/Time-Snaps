@@ -8,7 +8,7 @@ interface CardProps extends PropsWithChildren {
 
 export function Card({ title, subtitle, actions, children }: CardProps) {
   return (
-    <section className="card bg-surface">
+    <section className="card min-w-0 p-[18px] [@media(max-width:640px)]:p-3.5 bg-surface">
       <div className="mb-3.5 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="m-0 text-[1.05rem] font-bold text-ink">{title}</h2>

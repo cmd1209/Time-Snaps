@@ -112,10 +112,10 @@ export function AccountMenu({ userId, email, disabled, onLogout }: AccountMenuPr
 
   const initial = email.slice(0, 1).toUpperCase() || 'A';
   return <details className="relative shrink-0">
-    <summary className="header-avatar flex cursor-pointer list-none items-center justify-center overflow-hidden rounded-full bg-cyan-100 text-sm font-medium text-cyan-700 [&::-webkit-details-marker]:hidden" aria-label="Account menu">
+    <summary className="size-16 lg:size-[90px] flex cursor-pointer list-none items-center justify-center overflow-hidden rounded-full bg-cyan-100 text-sm font-medium text-cyan-700 [&::-webkit-details-marker]:hidden" aria-label="Account menu">
       {avatar ? <img src={avatar} alt="" className="size-full object-cover" /> : initial}
     </summary>
-    <div className="account-panel text-ink">
+    <div className="account-panel absolute right-0 top-[calc(100%+8px)] z-[2] w-[min(280px,calc(100vw-40px))] p-[18px] text-ink">
       <p className="text-sm [overflow-wrap:anywhere]">{email}</p>
       <div className="mb-3 flex items-center gap-3">
         <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cyan-100 text-lg text-cyan-700">

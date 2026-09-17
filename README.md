@@ -84,7 +84,9 @@ Check date filtering and grouping with `node --test tests/event-view.test.js` (N
 
 ## Editing styles with Tailwind
 
-Tailwind CSS v4 is installed through `@tailwindcss/vite` in `vite.config.ts`. Run `npm run dev` and edit React `className` values to see changes locally. The existing CSS still works; this is an incremental styling setup.
+Tailwind CSS v4 is installed through `@tailwindcss/vite` in `vite.config.ts`. Run `npm run dev` and edit React `className` values to see changes locally. Structural layout (containers, flex/grid, gaps, positioning, and responsive sizing) lives in JSX utilities. `src/styles.css` keeps theme colors, typography and text spacing, control appearance and internal padding, and interaction states.
+
+The header's inner container and main in `src/App.tsx` both use `mx-auto max-w-[1240px] px-5`. Change those matching utilities together to adjust the page width or horizontal gutters. The header background spans the viewport; its content aligns with main at every width.
 
 Good starting points:
 

@@ -32,8 +32,8 @@ export function AuthGate() {
 
   // A new user gets a new App instance: previous calendars and pending UI results are discarded.
   if (ready && session) return <App key={session.user.id} userId={session.user.id} email={session.user.email ?? ''} onLogout={logout} logoutError={error} />;
-  return <main className="app-shell">
-    <header className="app-header"><p className="eyebrow">Public calendar viewer</p><h1>Time Snaps</h1></header>
+  return <main className="mx-auto max-w-[1280px] px-5 pt-8 pb-16 [overflow-wrap:anywhere] [@media(max-width:640px)]:px-3.5">
+    <header className="mb-6"><p className="eyebrow">Public calendar viewer</p><h1>Time Snaps</h1></header>
     {!supabase ? <p role="alert">Account connection is not configured yet. Please try again after setup is complete.</p> : !ready ? <p role="status">Restoring your session...</p> : <AuthCard />}
   </main>;
 }

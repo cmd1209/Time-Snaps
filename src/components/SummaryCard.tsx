@@ -16,23 +16,23 @@ export function SummaryCard({ count, minutes, from, to, onRangeChange }: Summary
     onRangeChange(localDateKey(new Date(now.getFullYear(), now.getMonth(), 1)), localDateKey(new Date(now.getFullYear(), now.getMonth() + 1, 0)));
   }
   return (
-    <section className="card period-card" aria-label="Date range and summary">
-      <div className="period-toolbar">
+    <section className="card min-w-0 p-[18px] [@media(max-width:640px)]:p-3.5 period-card" aria-label="Date range and summary">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2>Your overview</h2>
           <p className="card__subtitle">Events starting in this date range.</p>
         </div>
-        <div className="button-group">
+        <div className="flex flex-wrap items-center gap-2">
           <button type="button" className="ghost-button" onClick={thisMonth}>This month</button>
           <button type="button" className="ghost-button" onClick={() => onRangeChange('', '')}>All dates</button>
         </div>
       </div>
-      <div className="period-content">
-        <div className="date-range">
-          <label className="field"><span>From</span><input type="date" value={from} aria-invalid={invalid} onChange={event => onRangeChange(event.target.value, to)} /></label>
-          <label className="field"><span>To</span><input type="date" value={to} aria-invalid={invalid} onChange={event => onRangeChange(from, event.target.value)} /></label>
+      <div className="mt-[18px] flex flex-wrap items-end justify-between gap-4">
+        <div className="grid flex-[1_1_320px] grid-cols-2 gap-3 [@media(max-width:480px)]:grid-cols-1">
+          <label className="field grid grid-cols-1 gap-2"><span>From</span><input type="date" value={from} aria-invalid={invalid} onChange={event => onRangeChange(event.target.value, to)} /></label>
+          <label className="field grid grid-cols-1 gap-2"><span>To</span><input type="date" value={to} aria-invalid={invalid} onChange={event => onRangeChange(from, event.target.value)} /></label>
         </div>
-        <dl className="overview-totals">
+        <dl className="overview-totals m-0 flex flex-[0_1_auto] flex-wrap items-center gap-8 [@media(max-width:480px)]:gap-6">
           <div><dt>Events</dt><dd>{count}</dd></div>
           <div><dt>Timed duration</dt><dd>{formatMinutes(minutes)}</dd></div>
         </dl>

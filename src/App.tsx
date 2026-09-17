@@ -377,29 +377,30 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
 
   return (
     <div className="min-h-screen bg-white text-zinc-950">
-      <header className="dashboard-header text-white px-5 pb-3 pt-6">
-        <div className="header-container">
-          <div className="header-top">
-            <img src="/assets/logo.svg" className="header-logo w-52" alt="Time Snaps" />
+      {/* Keep header and main containers aligned: max-w-[1240px] px-5. */}
+      <header className="dashboard-header text-white pb-3 pt-6">
+        <div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-5 lg:gap-8">
+          <div className="flex items-center justify-between gap-4">
+            <img src="/assets/logo.svg" className="h-auto max-w-[calc(100%-80px)] w-52" alt="Time Snaps" />
             <AccountMenu key={userId} userId={userId} email={email} disabled={saving} onLogout={onLogout} />
           </div>
-          <nav className="header-navigation" aria-label="Calendar navigation">
-            <label className="header-calendar">
+          <nav className="header-navigation grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,auto)_auto_1fr] lg:items-center lg:gap-6 [&_svg]:shrink-0" aria-label="Calendar navigation">
+            <label className="header-calendar relative col-span-full flex min-w-0 w-fit max-w-full items-center gap-1 px-0.5 py-1.5 lg:col-auto">
               <CalendarDays size={24} aria-hidden="true" />
               <span className="sr-only">Selected calendar</span>
-              <select value={selectedCalendarId} disabled={restoring || saving || restoreFailed || !savedCalendars.length} onChange={event => setSelectedCalendarId(event.target.value)}>
+              <select className="min-w-0 max-w-[360px]" value={selectedCalendarId} disabled={restoring || saving || restoreFailed || !savedCalendars.length} onChange={event => setSelectedCalendarId(event.target.value)}>
                 <option value="" disabled>{restoring ? 'Loading calendars...' : 'No saved calendars'}</option>
                 {savedCalendars.map(calendar => <option value={calendar.id} key={calendar.id}>{calendar.name}</option>)}
               </select>
-              <ChevronDown size={24} aria-hidden="true" className="header-calendar-chevron" />
+              <ChevronDown size={24} aria-hidden="true" className="absolute right-0.5 pointer-events-none" />
             </label>
-            <div className="header-actions">
-              <button type="button" onClick={() => setView('settings')} aria-current={view === 'settings' ? 'page' : undefined} className="header-button"><Settings size={24} aria-hidden="true" />Calendar Settings</button>
-              <button type="button" onClick={refreshCalendars} disabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} className="header-button"><RefreshCcw size={24} aria-hidden="true" className={isLoading ? 'motion-safe:animate-spin' : ''} />{isLoading ? 'Refreshing...' : 'Refresh'}</button>
+            <div className="flex flex-col gap-2 lg:flex-row lg:gap-6">
+              <button type="button" onClick={() => setView('settings')} aria-current={view === 'settings' ? 'page' : undefined} className="header-button flex items-center gap-2"><Settings size={24} aria-hidden="true" />Calendar Settings</button>
+              <button type="button" onClick={refreshCalendars} disabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} className="header-button flex items-center gap-2"><RefreshCcw size={24} aria-hidden="true" className={isLoading ? 'motion-safe:animate-spin' : ''} />{isLoading ? 'Refreshing...' : 'Refresh'}</button>
             </div>
-            <div className="header-views">
-              <button type="button" onClick={() => setView('dashboard')} aria-current={view === 'dashboard' ? 'page' : undefined} className="header-button"><CircleGauge size={24} aria-hidden="true" />Dashboard</button>
-              <button type="button" onClick={() => setView('details')} aria-current={view === 'details' ? 'page' : undefined} className="header-button"><Info size={24} aria-hidden="true" />Details</button>
+            <div className="flex flex-col items-end gap-2 lg:flex-row lg:justify-end lg:gap-6">
+              <button type="button" onClick={() => setView('dashboard')} aria-current={view === 'dashboard' ? 'page' : undefined} className="header-button flex items-center gap-2"><CircleGauge size={24} aria-hidden="true" />Dashboard</button>
+              <button type="button" onClick={() => setView('details')} aria-current={view === 'details' ? 'page' : undefined} className="header-button flex items-center gap-2"><Info size={24} aria-hidden="true" />Details</button>
             </div>
           </nav>
         </div>

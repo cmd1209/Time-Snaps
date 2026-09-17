@@ -12,14 +12,14 @@ interface StatusCardProps {
 export function StatusCard({ statusTone, statusMessage, activeMode, calendarLoads }: StatusCardProps) {
   return (
     <Card title="Status" subtitle="Connection and parsing feedback for the current URL.">
-      <div className={`status status--${statusTone}`}>
+      <div className={`status p-3 status--${statusTone}`}>
         <strong>{statusMessage}</strong>
         {activeMode ? <p>{describeLoadMode(activeMode)}</p> : null}
       </div>
       {calendarLoads.length > 0 ? (
-        <div className="status-list">
+        <div className="mt-3 grid grid-cols-1 gap-2.5">
           {calendarLoads.map((calendarLoad) => (
-            <article className="status-list__item" key={calendarLoad.normalizedUrl}>
+            <article className="status-list__item p-3" key={calendarLoad.normalizedUrl}>
               <strong>{calendarLoad.calendarName ?? 'Unresolved calendar'}</strong>
               <p>{calendarLoad.normalizedUrl}</p>
               <p>
