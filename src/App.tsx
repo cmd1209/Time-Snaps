@@ -416,10 +416,10 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
         {logoutError && <p role="alert" className="text-sm text-red-700">{logoutError}</p>}
         {restoreFailed && <div role="alert" className="mb-4"><p>{saveMessage}</p><button type="button" onClick={() => setRestoreAttempt(n => n + 1)}>Retry saved calendars</button></div>}
         {statusTone === 'error' && <p className="mb-4 text-sm text-red-700" role="alert">{statusMessage}</p>}
+
         <div role="status" className="mb-4 text-xs text-zinc-500">
           {restoring ? 'Loading saved calendars...' : isLoading ? 'Fetching the latest events...' : lastRefreshed ? `Last refreshed at ${lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : null}
         </div>
-
         <div hidden={view !== 'dashboard'}>
           <Dashboard calendars={savedCalendars} selectedId={selectedCalendarId} events={events} loading={isLoading} failed={statusTone === 'error'} refreshToken={refreshToken} />
         </div>

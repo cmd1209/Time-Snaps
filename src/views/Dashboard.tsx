@@ -69,7 +69,7 @@ export function Dashboard({ calendars, selectedId, events, loading, failed, refr
   ] as const;
 
   return <section aria-labelledby="dashboard-heading" className="min-w-0">
-    <div className="flex flex-wrap items-center justify-between gap-4 border-0 border-b border-solid border-zinc-200 pb-5">
+    <div className="flex flex-wrap items-center justify-between gap-4 border-0 pb-5">
       <h2 id="dashboard-heading" className="m-0 text-lg font-medium">Dashboard</h2>
       <div className="flex min-w-0 flex-wrap items-center gap-2" aria-label="Calendars in chart">
         {selected && <span className="max-w-full rounded-full px-3 py-1.5 text-xs font-medium text-zinc-950" style={{ background: color(selected.id), color: calendarTextColor(selected.color) }}>{selected.name}<span className="sr-only"> (selected calendar)</span></span>}
