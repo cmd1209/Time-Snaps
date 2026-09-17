@@ -388,10 +388,16 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
             <label className="header-calendar relative col-span-full flex min-w-0 w-fit max-w-full items-center gap-1 px-0.5 py-1.5 lg:col-auto">
               <CalendarDays size={24} aria-hidden="true" />
               <span className="sr-only">Selected calendar</span>
-              <select className="min-w-0 max-w-[360px]" value={selectedCalendarId} disabled={restoring || saving || restoreFailed || !savedCalendars.length} onChange={event => setSelectedCalendarId(event.target.value)}>
-                <option value="" disabled>{restoring ? 'Loading calendars...' : 'No saved calendars'}</option>
-                {savedCalendars.map(calendar => <option value={calendar.id} key={calendar.id}>{calendar.name}</option>)}
-              </select>
+              <span className="relative min-w-0 max-w-[360px]">
+                {/* Size the native select from its selected label, not its widest option. */}
+                <span aria-hidden="true" className="invisible block overflow-hidden whitespace-nowrap pr-7">
+                  {selectedCalendar?.name ?? (restoring ? 'Loading calendars...' : 'No saved calendars')}
+                </span>
+                <select className="absolute inset-0 h-full min-w-0 w-full" value={selectedCalendarId} disabled={restoring || saving || restoreFailed || !savedCalendars.length} onChange={event => setSelectedCalendarId(event.target.value)}>
+                  <option value="" disabled>{restoring ? 'Loading calendars...' : 'No saved calendars'}</option>
+                  {savedCalendars.map(calendar => <option value={calendar.id} key={calendar.id}>{calendar.name}</option>)}
+                </select>
+              </span>
               <ChevronDown size={24} aria-hidden="true" className="absolute right-0.5 pointer-events-none" />
             </label>
             <div className="flex flex-col gap-2 lg:flex-row lg:gap-6">
