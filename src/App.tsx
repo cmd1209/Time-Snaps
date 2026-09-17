@@ -377,7 +377,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
 
   return (
     <div className="min-h-screen bg-white text-zinc-950">
-      <header className="dashboard-header text-white">
+      <header className="dashboard-header text-white px-5 pb-3 pt-6">
         <div className="header-container">
           <div className="header-top">
             <img src="/assets/logo.svg" className="header-logo w-52" alt="Time Snaps" />

@@ -85,9 +85,8 @@ pre {
 
 /* Revised Figma header: shared 4/8/16/24px spacing and transparent controls. */
 .header-container {
-  max-width: 1280px;
+  max-width: 1200px;
   margin-inline: auto;
-  padding: 24px 24px 8px 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -157,7 +156,7 @@ pre {
 }
 .header-button:disabled { cursor: default; text-decoration: none; }
 @media (min-width: 1024px) {
-  .header-container { padding-bottom: 24px; gap: 32px; }
+  .header-container { gap: 32px; }
   .header-logo { width: 275px; }
   .header-avatar { width: 90px; height: 90px; }
   .header-navigation { grid-template-columns: minmax(0, auto) auto 1fr; gap: 24px; align-items: center; }
