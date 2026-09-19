@@ -376,7 +376,7 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
   }
 
   return (
-    <div className="min-h-screen bg-white text-zinc-950">
+    <div className="min-h-screen text-ink">
       {/* Keep header and main containers aligned: max-w-[1240px] px-5. */}
       <header className="dashboard-header text-white pb-3 pt-6">
         <div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-5 lg:gap-8">
@@ -413,11 +413,11 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
       </header>
 
       <main className="mx-auto max-w-[1240px] px-5 pb-16 pt-6 [overflow-wrap:anywhere]">
-        {logoutError && <p role="alert" className="text-sm text-red-700">{logoutError}</p>}
+        {logoutError && <p role="alert" className="text-sm text-error">{logoutError}</p>}
         {restoreFailed && <div role="alert" className="mb-4"><p>{saveMessage}</p><button type="button" onClick={() => setRestoreAttempt(n => n + 1)}>Retry saved calendars</button></div>}
-        {statusTone === 'error' && <p className="mb-4 text-sm text-red-700" role="alert">{statusMessage}</p>}
+        {statusTone === 'error' && <p className="mb-4 text-sm text-error" role="alert">{statusMessage}</p>}
 
-        <div role="status" className="mb-4 text-xs text-zinc-500">
+        <div role="status" className="mb-4 text-xs text-muted">
           {restoring ? 'Loading saved calendars...' : isLoading ? 'Fetching the latest events...' : lastRefreshed ? `Last refreshed at ${lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : null}
         </div>
         <div hidden={view !== 'dashboard'}>
@@ -427,10 +427,10 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
         <section hidden={view !== 'details'} aria-labelledby="details-heading">
           <h2 id="details-heading" className="mb-4 mt-0 text-lg font-medium">Details</h2>
           {selectedCalendarId ? <div className="grid min-w-0 grid-cols-1 gap-4" aria-label="Selected calendar events">
-            <div><h2 className="m-0 text-lg font-medium">Calendar events</h2><p className="m-0 mt-1 text-sm text-zinc-500">{selectedCalendar?.name} · Date filters below apply to this event list.</p></div>
+            <div><h2 className="m-0 text-lg font-medium">Calendar events</h2><p className="m-0 mt-1 text-sm text-muted">{selectedCalendar?.name} · Date filters below apply to this event list.</p></div>
             <SummaryCard count={visibleEvents.length} minutes={timedMinutes(visibleEvents)} from={range.from} to={range.to} onRangeChange={(from, to) => setRange({ from, to })} />
             <EventListCard key={selectedCalendarId} events={visibleEvents} loading={isLoading} emptyMessage={statusTone === 'error' ? 'Events could not be loaded. Try refreshing this calendar.' : range.from && range.to && range.from > range.to ? 'Choose a valid date range above.' : events.length ? 'No events in this date range. Try All dates or choose another range.' : 'This calendar has no events to display.'} />
-          </div> : <p className="py-8 text-sm text-zinc-500">Save a calendar in Calendar Settings to see its details.</p>}
+          </div> : <p className="py-8 text-sm text-muted">Save a calendar in Calendar Settings to see its details.</p>}
         </section>
 
         <section hidden={view !== 'settings'} aria-label="Calendar settings">

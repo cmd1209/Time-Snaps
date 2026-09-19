@@ -112,13 +112,13 @@ export function AccountMenu({ userId, email, disabled, onLogout }: AccountMenuPr
 
   const initial = email.slice(0, 1).toUpperCase() || 'A';
   return <details className="relative shrink-0">
-    <summary className="size-16 lg:size-[90px] flex cursor-pointer list-none items-center justify-center overflow-hidden rounded-full bg-cyan-100 text-sm font-medium text-cyan-700 [&::-webkit-details-marker]:hidden" aria-label="Account menu">
+    <summary className="size-16 lg:size-[90px] flex cursor-pointer list-none items-center justify-center overflow-hidden rounded-full bg-accent-soft text-sm font-medium text-ink [&::-webkit-details-marker]:hidden" aria-label="Account menu">
       {avatar ? <img src={avatar} alt="" className="size-full object-cover" /> : initial}
     </summary>
     <div className="account-panel absolute right-0 top-[calc(100%+8px)] z-[2] w-[min(280px,calc(100vw-40px))] p-[18px] text-ink">
       <p className="text-sm [overflow-wrap:anywhere]">{email}</p>
       <div className="mb-3 flex items-center gap-3">
-        <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-cyan-100 text-lg text-cyan-700">
+        <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent-soft text-lg text-ink">
           {avatar ? <img src={avatar} alt="Your avatar" className="size-full object-cover" /> : <span aria-label="Default avatar">{initial}</span>}
         </div>
         <button type="button" className="secondary-button text-sm" disabled={blocked} onClick={() => input.current?.click()}>
@@ -130,11 +130,11 @@ export function AccountMenu({ userId, email, disabled, onLogout }: AccountMenuPr
         event.target.value = '';
         if (file) void upload(file);
       }} />
-      <p className="text-xs text-zinc-500">JPEG, PNG, or WebP · up to 2 MB. Uploads save automatically.</p>
+      <p className="text-xs text-muted">JPEG, PNG, or WebP · up to 2 MB. Uploads save automatically.</p>
       {avatar && <button type="button" className="ghost-button mb-3 text-sm" disabled={blocked} onClick={() => void remove()}>Remove avatar</button>}
       {loading && <p role="status" className="text-sm">Loading avatar...</p>}
       {message && <p role="status" className="text-sm">{message}</p>}
-      {error && <div role="alert" className="mb-3 text-sm text-red-700"><p>{error}</p><button type="button" className="ghost-button" disabled={blocked} onClick={() => setAttempt(value => value + 1)}>Retry loading avatar</button></div>}
+      {error && <div role="alert" className="mb-3 text-sm text-error"><p>{error}</p><button type="button" className="ghost-button" disabled={blocked} onClick={() => setAttempt(value => value + 1)}>Retry loading avatar</button></div>}
       <button type="button" className="secondary-button flex items-center gap-2" disabled={disabled || busy} onClick={() => void onLogout()}><LogOut size={16} aria-hidden="true" />Log out</button>
     </div>
   </details>;

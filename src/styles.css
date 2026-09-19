@@ -13,13 +13,17 @@
   --color-calendar-teal: #8dccc4;
   --color-calendar-sand: #b09b80;
   --color-calendar-peach: #e6b2a4;
-  --color-accent: #1268db;
-  --color-accent-soft: #eef4fb;
-  --color-page: var(--color-zinc-200);
-  --color-surface: #ffffff;
-  --color-ink: #18202a;
-  --color-muted: #5d6b7c;
-  --color-line: #d7e0ea;
+  --color-accent: #3159b8;
+  --color-accent-soft: #354566;
+  --color-page: #2a3554;
+  --color-surface: #3f507f;
+  --color-control: #263451;
+  --color-error: #ffced8;
+  --color-ink: #f8faff;
+  --color-muted: #d4ddef;
+  --color-line: rgb(222 232 255 / 22%);
+  --bg-gradient: linear-gradient(90deg, #929CB6 0%, #2A3554 100%);
+  --bg-surface-gradient: radial-gradient(200% 150% at 140% 200%, #FF6BDF 0%, #3F507F 100%);
 }
 
 /* Layout belongs in JSX Tailwind utilities. Keep theme, typography, control
@@ -30,7 +34,8 @@
   line-height: 1.5;
   font-weight: 400;
   color: var(--color-ink);
-  background: var(--color-page);
+  color-scheme: dark;
+  background-color: var(--color-page);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -43,6 +48,9 @@
 
 body {
   margin: 0;
+  min-height: 100vh;
+  /* Keep the original gradient, with enough depth for light page text. */
+  background-image: linear-gradient(rgb(18 26 47 / 45%), rgb(18 26 47 / 45%)), var(--bg-gradient);
 }
 
 button,
@@ -55,21 +63,6 @@ textarea {
 code,
 pre {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-}
-
-/* Figma header-blue (17:97), translated from its 2874 × 230 frame.
-   Percentage ellipses keep the cyan/pink/violet mesh responsive.
-   The two slightly rotated Figma fills are approximated by unrotated ellipses. */
-.dashboard-header {
-  background-color: var(--color-dashboard-header);
-  background-image:
-    url('/assets/y-so-serious-white.png'),
-    radial-gradient(ellipse 60% 697.87% at 33.25% 71.53%, var(--color-header-cyan) 0%, transparent 100%),
-    radial-gradient(ellipse 43.65% 507.68% at 63.74% 83.91%, var(--color-header-pink) 0%, transparent 100%),
-    radial-gradient(ellipse 42.11% 489.79% at 22.96% 23.91%, var(--color-header-violet) 0%, transparent 100%);
-  background-repeat: repeat, no-repeat, no-repeat, no-repeat;
-  /* Blend only the pattern at full opacity; keep the mesh layers unchanged. */
-  background-blend-mode: multiply, normal, normal, normal;
 }
 
 /* Header appearance; layout and responsive sizing live in App.tsx. */
@@ -86,7 +79,7 @@ pre {
   cursor: pointer;
   text-overflow: ellipsis;
 }
-.header-calendar option { background: white; color: var(--color-ink); }
+option { background: var(--color-control); color: var(--color-ink); }
 .header-button {
   padding-block: 6px;
   padding-inline: 8px;
@@ -115,10 +108,9 @@ pre {
 }
 
 .card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-line);
+  background: var(--bg-surface-gradient);
   border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(16, 24, 40, 0.04);
+  box-shadow: 0 8px 24px rgb(12 19 37 / 16%);
 }
 
 .card__subtitle {
@@ -133,14 +125,27 @@ pre {
   color: var(--color-muted);
 }
 
+input,
+select,
+textarea {
+  background: var(--color-control);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-muted);
+  opacity: 0.8;
+}
+
 .field input,
 .field select {
   min-width: 0;
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #c7d2df;
+  border: 1px solid var(--color-line);
   border-radius: 8px;
-  background: #fbfcfe;
 }
 
 button {
@@ -151,6 +156,10 @@ button {
   background: var(--color-accent);
   color: #fff;
   cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(1.12);
 }
 
 button:disabled {
@@ -169,9 +178,9 @@ button:disabled {
 }
 
 .calendar-input-row {
-  border: 1px solid #e1e8f0;
+  border: 1px solid var(--color-line);
   border-radius: 8px;
-  background: #f9fbfd;
+  background: rgb(18 26 47 / 30%);
 }
 
 .calendar-preview__label {
@@ -189,7 +198,7 @@ button:disabled {
 
 .calendar-preview__error {
   margin: 0;
-  color: #b54747;
+  color: var(--color-error);
 }
 
 .status {
@@ -208,23 +217,23 @@ button:disabled {
 }
 
 .status--idle {
-  background: #f5f7fa;
-  border-color: #d9e1ea;
+  background: #303e59;
+  border-color: var(--color-line);
 }
 
 .status--loading {
-  background: #eef6ff;
-  border-color: #bfd7ff;
+  background: #263e65;
+  border-color: #648cc4;
 }
 
 .status--success {
-  background: #edf9f0;
-  border-color: #bfe3c6;
+  background: #274c46;
+  border-color: #659d8c;
 }
 
 .status--error {
-  background: #fff1f1;
-  border-color: #f0c5c5;
+  background: #60384b;
+  border-color: #bb7c91;
 }
 
 .hint,
@@ -234,9 +243,9 @@ button:disabled {
 }
 
 .status-list__item {
-  border: 1px solid #e1e8f0;
+  border: 1px solid var(--color-line);
   border-radius: 10px;
-  background: #f9fbfd;
+  background: rgb(18 26 47 / 30%);
 }
 
 .status-list__item p,
@@ -256,34 +265,33 @@ button:disabled {
 
 .event-row {
   border-radius: 10px;
-  border: 1px solid #e1e8f0;
-  background: #f9fbfd;
+  border: 1px solid var(--color-line);
+  background: rgb(18 26 47 / 30%);
 }
 
 /* Calendar viewer */
 h1 { margin: 0; font-size: clamp(1.8rem, 4vw, 2.35rem); letter-spacing: -0.04em; }
 summary { cursor: pointer; }
-summary:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+summary:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
   outline: 3px solid #85b6f5;
   outline-offset: 3px;
 }
 .account-panel {
   border: 1px solid var(--color-line);
   border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 8px 24px #10284014;
+  background: var(--color-control);
+  box-shadow: 0 12px 32px rgb(12 19 37 / 35%);
 }
 .account-panel p { margin: 0 0 12px; }
 .period-card h2 { margin: 0; font-size: 1.05rem; }
 .overview-totals dt { color: var(--color-muted); font-size: 0.85rem; }
 .overview-totals dd { margin: 2px 0 0; font-size: 1.55rem; font-weight: 600; letter-spacing: -0.03em; }
 .period-card .hint { margin-top: 14px; font-size: 0.8rem; }
-.event-day h3 { margin: 4px 0 12px; font-size: 0.9rem; font-weight: 600; color: #425164; }
-.event-row { background: #fff; }
+.event-day h3 { margin: 4px 0 12px; font-size: 0.9rem; font-weight: 600; color: var(--color-muted); }
 .event-row h4 { margin: 4px 0 0; font-size: 1rem; font-weight: 600; }
 .event-row .event-time { margin: 0; font-size: 0.85rem; color: var(--color-muted); }
 .event-details { font-size: 0.9rem; }
-.event-details summary { color: #536982; width: fit-content; }
+.event-details summary { color: var(--color-muted); width: fit-content; }
 .event-details p { padding-top: 8px; }
 .event-description { white-space: pre-wrap; }
 

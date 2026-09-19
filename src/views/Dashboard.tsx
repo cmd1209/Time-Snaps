@@ -72,31 +72,31 @@ export function Dashboard({ calendars, selectedId, events, loading, failed, refr
     <div className="flex flex-wrap items-center justify-between gap-4 border-0 pb-5">
       <h2 id="dashboard-heading" className="m-0 text-lg font-medium">Dashboard</h2>
       <div className="flex min-w-0 flex-wrap items-center gap-2" aria-label="Calendars in chart">
-        {selected && <span className="max-w-full rounded-full px-3 py-1.5 text-xs font-medium text-zinc-950" style={{ background: color(selected.id), color: calendarTextColor(selected.color) }}>{selected.name}<span className="sr-only"> (selected calendar)</span></span>}
+        {selected && <span className="max-w-full rounded-full px-3 py-1.5 text-xs font-medium text-ink" style={{ background: color(selected.id), color: calendarTextColor(selected.color) }}>{selected.name}<span className="sr-only"> (selected calendar)</span></span>}
         {extraCalendars.map(calendar => <button type="button" key={calendar.id} className="flex max-w-full items-center gap-2 rounded-full px-3 py-1.5 text-xs text-zinc-950" style={{ background: color(calendar.id), color: calendarTextColor(calendar.color) }} onClick={() => setComparisonIds(ids => ids.filter(id => id !== calendar.id))} aria-label={`Remove ${calendar.name} from comparison`}>
           <span>{calendar.name}</span><X size={13} aria-hidden="true" className="shrink-0" />
         </button>)}
-        {available.length > 0 && <label className="flex items-center gap-1 text-xs text-zinc-600"><Plus size={14} aria-hidden="true" /><span className="sr-only">Add calendar to compare</span><select className="max-w-48 min-w-0 rounded-md border border-solid border-zinc-200 bg-white px-2 py-1.5 text-xs text-zinc-700" value="" onChange={event => { const id = event.target.value; setComparisonIds(ids => [...ids, id]); }}>
+        {available.length > 0 && <label className="flex items-center gap-1 text-xs text-muted"><Plus size={14} aria-hidden="true" /><span className="sr-only">Add calendar to compare</span><select className="max-w-48 min-w-0 rounded-md px-2 py-1.5 text-xs text-ink" value="" onChange={event => { const id = event.target.value; setComparisonIds(ids => [...ids, id]); }}>
           <option value="" disabled>Compare calendar</option>{available.map(calendar => <option value={calendar.id} key={calendar.id}>{calendar.name}</option>)}
         </select></label>}
       </div>
     </div>
-    {!selected ? <p className="py-8 text-sm text-zinc-500">Save a calendar in Calendar Settings to see your dashboard.</p> : <>
+    {!selected ? <p className="py-8 text-sm text-muted">Save a calendar in Calendar Settings to see your dashboard.</p> : <>
       <div className="my-6 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label={`Statistics for ${selected.name}`}>
-        {metrics.map(([label, value, description]) => <div key={label} className="min-w-0 rounded-xl border border-solid border-zinc-200 bg-zinc-50 px-5 py-5 sm:px-6" title={description}>
-          <h3 className="m-0 text-sm font-normal text-zinc-700">{label}</h3>
-          <p className="m-0 mt-2 text-2xl font-extrabold tracking-tight text-zinc-950 sm:text-3xl">{loading || failed ? '—' : <>{formatHours(value)} <span className="text-lg sm:text-xl">Hours</span></>}</p>
+        {metrics.map(([label, value, description]) => <div key={label} className="card min-w-0 rounded-xl px-5 py-5 sm:px-6" title={description}>
+          <h3 className="m-0 text-sm font-normal text-ink">{label}</h3>
+          <p className="m-0 mt-2 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{loading || failed ? '—' : <>{formatHours(value)} <span className="text-lg sm:text-xl">Hours</span></>}</p>
         </div>)}
       </div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500">
-        <p className="m-0">Statistics for <strong className="font-medium text-zinc-700">{selected.name}</strong>. Comparisons appear in the charts.</p>
-        <label className="flex items-center gap-2">Chart period<select className="rounded-md border border-solid border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-700" value={monthCount} onChange={event => setMonthCount(Number(event.target.value))}><option value={6}>Last 6 months</option><option value={12}>Last 12 months</option></select></label>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-xs text-muted">
+        <p className="m-0">Statistics for <strong className="font-medium text-muted">{selected.name}</strong>. Comparisons appear in the charts.</p>
+        <label className="flex items-center gap-2">Chart period<select className="rounded-md px-2 py-1 text-xs text-ink" value={monthCount} onChange={event => setMonthCount(Number(event.target.value))}><option value={6}>Last 6 months</option><option value={12}>Last 12 months</option></select></label>
       </div>
-      {(loading || comparing) && <p role="status" className="text-sm text-zinc-500">Loading calendar charts...</p>}
-      {extraCalendars.map(calendar => comparisons[calendar.id]?.error && <p key={calendar.id} role="alert" className="text-sm text-red-700">{calendar.name}: {comparisons[calendar.id].error} Use Refresh to retry.</p>)}
+      {(loading || comparing) && <p role="status" className="text-sm text-ink">Loading calendar charts...</p>}
+      {extraCalendars.map(calendar => comparisons[calendar.id]?.error && <p key={calendar.id} role="alert" className="text-sm text-error">{calendar.name}: {comparisons[calendar.id].error} Use Refresh to retry.</p>)}
       <DashboardCharts months={months} series={series} />
-      {!loading && !comparing && series.length > 0 && series.every(item => item.values.every(value => value === 0)) && <p className="text-sm text-zinc-500">No timed events in these months. Try a longer chart period.</p>}
-      <p className="mt-4 text-xs leading-relaxed text-zinc-500">Scheduled hours, excluding all-day events. Months and weeks use your local time zone and event start dates. Monthly average includes zero months and the current month. Recurring series are not expanded yet.</p>
+      {!loading && !comparing && series.length > 0 && series.every(item => item.values.every(value => value === 0)) && <p className="text-sm text-muted">No timed events in these months. Try a longer chart period.</p>}
+      <p className="mt-4 text-xs leading-relaxed text-muted">Scheduled hours, excluding all-day events. Months and weeks use your local time zone and event start dates. Monthly average includes zero months and the current month. Recurring series are not expanded yet.</p>
     </>}
   </section>;
 }

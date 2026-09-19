@@ -26,9 +26,9 @@ export function DashboardCharts({ months, series }: Props) {
   </>;
   return <>
     <div className="grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-2">
-      <section className="min-w-0 rounded-xl border border-solid border-zinc-200 bg-white p-4 sm:p-6">
-        <h3 className="m-0 text-sm font-medium text-zinc-700">Monthly hours</h3>
-        <svg className="mt-4 block h-auto w-full overflow-visible text-zinc-500" viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby={`${id}-bars`}>
+      <section className="card min-w-0 rounded-xl p-4 sm:p-6">
+        <h3 className="m-0 text-sm font-medium text-ink">Monthly hours</h3>
+        <svg className="mt-4 block h-auto w-full overflow-visible text-ink" viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby={`${id}-bars`}>
           <title id={`${id}-bars`}>Stacked monthly scheduled hours. Exact values are available in the chart data table below.</title>
           {grid()}
           {months.map((month, i) => {
@@ -41,9 +41,9 @@ export function DashboardCharts({ months, series }: Props) {
           })}
         </svg>
       </section>
-      <section className="min-w-0 rounded-xl border border-solid border-zinc-200 bg-white p-4 sm:p-6">
-        <h3 className="m-0 text-sm font-medium text-zinc-700">Calendar comparison</h3>
-        <svg className="mt-4 block h-auto w-full overflow-visible text-zinc-500" viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby={`${id}-lines`}>
+      <section className="card min-w-0 rounded-xl p-4 sm:p-6">
+        <h3 className="m-0 text-sm font-medium text-ink">Calendar comparison</h3>
+        <svg className="mt-4 block h-auto w-full overflow-visible text-ink" viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby={`${id}-lines`}>
           <title id={`${id}-lines`}>Monthly scheduled hours for each calendar. Exact values are available in the chart data table below.</title>
           {grid()}
           {series.map(item => <g key={item.id}>
@@ -53,13 +53,13 @@ export function DashboardCharts({ months, series }: Props) {
         </svg>
       </section>
     </div>
-    <details className="mt-3 text-sm text-zinc-600">
+    <details className="mt-3 text-sm text-muted">
       <summary className="w-fit">View chart data</summary>
       <div className="mt-3 max-w-full overflow-x-auto">
         <table className="w-full border-collapse text-left text-sm">
           <caption className="mb-2 text-left">Scheduled hours by month</caption>
           <thead><tr><th className="p-2">Month</th>{series.map(item => <th className="p-2" key={item.id}>{item.name}</th>)}</tr></thead>
-          <tbody>{months.map((month, i) => <tr key={month.key} className="border-0 border-t border-solid border-zinc-200"><th className="p-2 font-normal">{month.fullLabel}</th>{series.map(item => <td className="p-2 tabular-nums" key={item.id}>{formatHours(item.values[i])}</td>)}</tr>)}</tbody>
+          <tbody>{months.map((month, i) => <tr key={month.key} className="border-0 border-t border-solid border-line"><th className="p-2 font-normal">{month.fullLabel}</th>{series.map(item => <td className="p-2 tabular-nums" key={item.id}>{formatHours(item.values[i])}</td>)}</tr>)}</tbody>
         </table>
       </div>
     </details>

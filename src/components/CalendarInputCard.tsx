@@ -75,12 +75,12 @@ export function CalendarInputCard({
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <label className="flex items-center gap-2 text-sm">
                 <span>Calendar color</span>
-                <input type="color" className="h-9 w-12 cursor-pointer rounded border border-solid border-zinc-300 bg-white p-1"
+                <input type="color" className="h-9 w-12 cursor-pointer rounded border border-solid border-line bg-control p-1"
                   aria-label={`Color for ${row.calendarName ?? `Calendar ${index + 1}`}`}
                   disabled={disabled} value={colorPickerValue(row.color, index)}
                   onChange={event => onChangeColor(row.id, event.target.value)} />
               </label>
-              <span className="text-xs text-zinc-500">{row.color ?? 'Default palette'}</span>
+              <span className="text-xs text-muted">{row.color ?? 'Default palette'}</span>
               {row.color && <button type="button" className="ghost-button text-xs" disabled={disabled} onClick={() => onChangeColor(row.id, null)}>Use default</button>}
             </div>
             <div className="calendar-preview mt-3 grid grid-cols-1 gap-2.5">
