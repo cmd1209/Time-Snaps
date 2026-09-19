@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { dashboardMonths, dashboardStats } from '../src/utils/dashboard.ts';
+import { dashboardDays, dashboardMonths, dashboardStats } from '../src/utils/dashboard.ts';
 process.env.TZ = 'Europe/Berlin';
 const event = (start, durationMinutes = 60, extra = {}) => ({ start, durationMinutes, isAllDay: false, ...extra });
 const now = new Date(2026, 8, 15, 12); // Tuesday
@@ -39,4 +39,31 @@ test('empty calendar produces zero values rather than NaN', () => {
   assert.equal(result.total, 0);
   assert.equal(result.monthlyAverage, 0);
   assert.ok(result.byMonth.every(value => value === 0));
+});
+
+test('daily activity includes exactly 30 local dates and excludes events outside the window', () => {
+  const days = dashboardDays([
+    event('2026-08-16T21:59:00Z', 60), // Before first local day
+    event('2026-08-16T22:00:00Z', 120), // August 17, local midnight
+    event('2026-09-15T21:59:00Z', 30), // Today, 23:59
+    event('2026-09-15T22:00:00Z', 60), // Tomorrow
+    event('2026-09-15T10:00:00Z', 1440, { isAllDay: true }),
+    event('invalid', 60), event(null, 60),
+    event('2026-09-15T10:00:00Z', Infinity)
+  ], now);
+  assert.equal(days.length, 30);
+  assert.equal(days[0].date.getDate(), 17);
+  assert.equal(days[0].hours, 2);
+  assert.equal(days[29].hours, 0.5);
+  assert.equal(days.reduce((sum, day) => sum + day.hours, 0), 2.5);
+});
+
+test('daily activity keeps local midnights and combines repeated hours across daylight saving', () => {
+  const days = dashboardDays([
+    event('2026-10-25T00:30:00Z', 60),
+    event('2026-10-25T01:30:00Z', 120)
+  ], new Date(2026, 9, 26, 12));
+  assert.equal(days[28].hours, 3);
+  assert.ok(days.every(day => day.date.getHours() === 0));
+  assert.equal(new Set(days.map(day => day.date.toDateString())).size, 30);
 });

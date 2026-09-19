@@ -40,3 +40,19 @@ export function dashboardStats(events: CalendarEvent[], months: DashboardMonth[]
 export function formatHours(hours: number): string {
   return new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(hours);
 }
+
+/** Thirty local calendar days, including today; durations belong to the start day. */
+export function dashboardDays(events: CalendarEvent[], now: Date) {
+  const days = Array.from({ length: 30 }, (_, index) => {
+    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29 + index);
+    return { date, hours: 0 };
+  });
+  const indexByDate = new Map(days.map((day, index) => [day.date.getTime(), index]));
+  for (const event of events) {
+    if (!event.start || event.isAllDay || event.durationMinutes === null || !Number.isFinite(event.durationMinutes) || event.durationMinutes < 0) continue;
+    const start = new Date(event.start);
+    const index = indexByDate.get(new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime());
+    if (index !== undefined) days[index].hours += event.durationMinutes / 60;
+  }
+  return days;
+}

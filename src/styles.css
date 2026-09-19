@@ -18,11 +18,13 @@
   --color-page: #2a3554;
   --color-surface: #3f507f;
   --color-control: #263451;
+  --color-highlight: #ff6bdf;
+  --color-activity-empty: #929cb6;
   --color-error: #ffced8;
   --color-ink: #f8faff;
   --color-muted: #d4ddef;
   --color-line: rgb(222 232 255 / 22%);
-  --bg-gradient: linear-gradient(90deg, #929CB6 0%, #2A3554 100%);
+  --bg-gradient: linear-gradient(180deg, #929CB6 0%, #2A3554 100%);
   --bg-surface-gradient: radial-gradient(200% 150% at 140% 200%, #FF6BDF 0%, #3F507F 100%);
 }
 
@@ -49,8 +51,9 @@
 body {
   margin: 0;
   min-height: 100vh;
-  /* Keep the original gradient, with enough depth for light page text. */
-  background-image: linear-gradient(rgb(18 26 47 / 45%), rgb(18 26 47 / 45%)), var(--bg-gradient);
+  /* Vertical page gradient follows the redesign, with a soft contrast layer. */
+  background-image: linear-gradient(rgb(18 26 47 / 25%), rgb(18 26 47 / 25%)), var(--bg-gradient);
+  background-attachment: fixed;
 }
 
 button,
@@ -65,39 +68,45 @@ pre {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
-/* Header appearance; layout and responsive sizing live in App.tsx. */
-.header-navigation {
-  font-size: 16px;
+/* Shared navigation changes position through responsive utilities in JSX. */
+.app-navigation {
+  background: var(--color-page);
+  box-shadow: 0 8px 32px rgb(12 19 37 / 18%);
 }
+.navigation-button {
+  background: transparent;
+  color: var(--color-ink);
+  font-size: 0.9rem;
+  text-align: left;
+}
+.navigation-button[aria-current="page"] {
+  background: rgb(255 107 223 / 10%);
+}
+.navigation-button[aria-current="page"] svg { color: var(--color-highlight); }
+.navigation-button:hover:not(:disabled) { background: rgb(255 255 255 / 8%); }
+.navigation-button:disabled { cursor: default; opacity: 0.45; }
 .header-calendar select {
   appearance: none;
   padding: 0 28px 0 0;
   border: 0;
-  border-radius: 0;
   background: transparent;
   color: inherit;
   cursor: pointer;
   text-overflow: ellipsis;
 }
 option { background: var(--color-control); color: var(--color-ink); }
-.header-button {
-  padding-block: 6px;
-  padding-inline: 8px;
-  border-radius: 4px;
-  background: transparent;
-  color: inherit;
-  font-size: inherit;
-  line-height: 24px;
-  text-align: left;
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 16px;
+  z-index: 30;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--color-control);
+  color: var(--color-ink);
+  transform: translateY(-150%);
 }
-.header-button:hover:not(:disabled),
-.header-button[aria-current="page"] {
-  background: rgb(255 255 255 / 15%);
-}
-.header-button:active:not(:disabled) {
-  background: rgb(255 255 255 / 25%);
-}
-.header-button:disabled { cursor: default; text-decoration: none; }
+.skip-link:focus { transform: translateY(0); }
 
 .eyebrow {
   margin: 0 0 8px;

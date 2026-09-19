@@ -4,6 +4,7 @@ import type { CalendarEvent, SavedCalendar } from '../types';
 import { loadCalendar } from '../utils/calendar';
 import { dashboardMonths, dashboardStats, formatHours } from '../utils/dashboard';
 import { calendarColor, calendarTextColor } from '../utils/calendarColor';
+import { RecentActivity } from '../components/RecentActivity';
 import { DashboardCharts } from '../components/DashboardCharts';
 
 interface Props {
@@ -61,12 +62,7 @@ export function Dashboard({ calendars, selectedId, events, loading, failed, refr
     })
   ];
   const available = calendars.filter(calendar => calendar.id !== selectedId && !comparisonIds.includes(calendar.id));
-  const metrics = [
-    ['Total', stats.total, 'All timed events available in this calendar.'],
-    ['Current month', stats.currentMonth, 'Scheduled hours in the full current month.'],
-    ['Monthly avg.', stats.monthlyAverage, `Average over the ${monthCount} displayed months, including months with no events.`],
-    ['Current week', stats.currentWeek, 'Scheduled hours Monday through Sunday.']
-  ] as const;
+  const hours = (value: number) => loading || failed ? '—' : `${formatHours(value)} Hrs.`;
 
   return <section aria-labelledby="dashboard-heading" className="min-w-0">
     <div className="flex flex-wrap items-center justify-between gap-4 border-0 pb-5">
@@ -82,14 +78,23 @@ export function Dashboard({ calendars, selectedId, events, loading, failed, refr
       </div>
     </div>
     {!selected ? <p className="py-8 text-sm text-muted">Save a calendar in Calendar Settings to see your dashboard.</p> : <>
-      <div className="my-6 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label={`Statistics for ${selected.name}`}>
-        {metrics.map(([label, value, description]) => <div key={label} className="card min-w-0 rounded-xl px-5 py-5 sm:px-6" title={description}>
-          <h3 className="m-0 text-sm font-normal text-ink">{label}</h3>
-          <p className="m-0 mt-2 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{loading || failed ? '—' : <>{formatHours(value)} <span className="text-lg sm:text-xl">Hours</span></>}</p>
-        </div>)}
+      <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4" aria-label={`Statistics for ${selected.name}`}>
+        <div className="card min-w-0 p-5 sm:p-6" title="Number of saved calendars across your account.">
+          <h3 className="m-0 text-xs font-normal">Calendars</h3>
+          <p className="m-0 mt-2 text-2xl font-bold tracking-tight">{calendars.length}</p>
+        </div>
+        <div className="card min-w-0 p-5 sm:p-6" title="All timed events available in the selected calendar.">
+          <h3 className="m-0 text-xs font-normal">Total Time</h3>
+          <p className="m-0 mt-2 text-2xl font-bold tracking-tight">{hours(stats.total)}</p>
+        </div>
+        <div className="card col-span-2 grid min-w-0 grid-cols-2 gap-4 p-5 sm:p-6">
+          <div title="Scheduled hours in the full current month."><h3 className="m-0 text-xs font-normal">Current Month</h3><p className="m-0 mt-2 text-2xl font-bold tracking-tight">{hours(stats.currentMonth)}</p></div>
+          <div title="Scheduled hours Monday through Sunday."><h3 className="m-0 text-xs font-normal">Current Week</h3><p className="m-0 mt-2 text-2xl font-bold tracking-tight">{hours(stats.currentWeek)}</p></div>
+        </div>
       </div>
+      <RecentActivity events={events} now={now} unavailable={loading || failed} />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-xs text-muted">
-        <p className="m-0">Statistics for <strong className="font-medium text-muted">{selected.name}</strong>. Comparisons appear in the charts.</p>
+        <p className="m-0">Statistics for <strong className="font-medium text-muted">{selected.name}</strong>. Monthly average: {hours(stats.monthlyAverage)}. Comparisons appear below.</p>
         <label className="flex items-center gap-2">Chart period<select className="rounded-md px-2 py-1 text-xs text-ink" value={monthCount} onChange={event => setMonthCount(Number(event.target.value))}><option value={6}>Last 6 months</option><option value={12}>Last 12 months</option></select></label>
       </div>
       {(loading || comparing) && <p role="status" className="text-sm text-ink">Loading calendar charts...</p>}

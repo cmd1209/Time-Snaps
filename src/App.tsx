@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, ChevronDown, CircleGauge, Info, Settings, RefreshCcw } from 'lucide-react';
+import { CalendarDays, ChevronDown } from 'lucide-react';
+import { AppNavigation } from './components/AppNavigation';
 import { Dashboard } from './views/Dashboard';
 import { supabase } from './lib/supabase';
 import { AccountMenu } from './components/AccountMenu';
@@ -377,18 +378,22 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
 
   return (
     <div className="min-h-screen text-ink">
-      {/* Keep header and main containers aligned: max-w-[1240px] px-5. */}
-      <header className="dashboard-header text-white pb-3 pt-6">
-        <div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-5 lg:gap-8">
-          <div className="flex items-center justify-between gap-4">
-            <img src="/assets/logo.svg" className="h-auto max-w-[calc(100%-80px)] w-52" alt="Time Snaps" />
-            <AccountMenu key={userId} userId={userId} email={email} disabled={saving} onLogout={onLogout} />
-          </div>
-          <nav className="header-navigation grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-6 lg:grid-cols-[minmax(0,auto)_auto_1fr] lg:items-center lg:gap-6 [&_svg]:shrink-0" aria-label="Calendar navigation">
-            <label className="header-calendar relative col-span-full flex min-w-0 w-fit max-w-full items-center gap-1 px-0.5 py-1.5 lg:col-auto">
+      <a href="#main-content" className="skip-link">Skip to content</a>
+      <header className="mx-auto grid max-w-[1240px] grid-cols-1 gap-5 px-4 pb-6 pt-4 lg:grid-cols-[1fr_auto] lg:items-center lg:px-6 lg:pt-8">
+        <img src="/assets/logo.svg" className="mx-auto h-[49px] w-[152px] lg:order-2 lg:mx-0" alt="Time Snaps — Your time at a glance" />
+        <div className="flex min-w-0 items-center justify-between gap-4 lg:justify-start">
+          <p className="m-0 min-w-0 text-2xl font-light tracking-tight lg:order-2">Hi, <strong className="font-semibold [overflow-wrap:anywhere]">{email.split('@')[0] || 'there'}</strong></p>
+          <AccountMenu key={userId} userId={userId} email={email} disabled={saving} onLogout={onLogout} />
+        </div>
+      </header>
+      <div className="mx-auto grid max-w-[1240px] grid-cols-1 gap-4 px-4 lg:grid-cols-[184px_minmax(0,1fr)] lg:gap-6 lg:px-6">
+        <AppNavigation view={view} onViewChange={setView} onRefresh={refreshCalendars} refreshing={isLoading} refreshDisabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} />
+        <main id="main-content" tabIndex={-1} className="min-w-0 pb-[calc(112px+env(safe-area-inset-bottom))] lg:pb-12 [overflow-wrap:anywhere]">
+          <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
+            <label className="header-calendar relative flex min-w-0 w-fit max-w-full items-center gap-2 px-0.5 py-1.5">
               <CalendarDays size={24} aria-hidden="true" />
               <span className="sr-only">Selected calendar</span>
-              <span className="relative min-w-0 max-w-[360px]">
+              <span className="relative min-w-0 max-w-[min(360px,calc(100vw-100px))]">
                 {/* Size the native select from its selected label, not its widest option. */}
                 <span aria-hidden="true" className="invisible block overflow-hidden whitespace-nowrap pr-7">
                   {selectedCalendar?.name ?? (restoring ? 'Loading calendars...' : 'No saved calendars')}
@@ -400,50 +405,39 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
               </span>
               <ChevronDown size={24} aria-hidden="true" className="absolute right-0.5 pointer-events-none" />
             </label>
-            <div className="flex flex-col gap-2 lg:flex-row lg:gap-6">
-              <button type="button" onClick={() => setView('settings')} aria-current={view === 'settings' ? 'page' : undefined} className="header-button flex items-center gap-2"><Settings size={24} aria-hidden="true" />Calendar Settings</button>
-              <button type="button" onClick={refreshCalendars} disabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} className="header-button flex items-center gap-2"><RefreshCcw size={24} aria-hidden="true" className={isLoading ? 'motion-safe:animate-spin' : ''} />{isLoading ? 'Refreshing...' : 'Refresh'}</button>
-            </div>
-            <div className="flex flex-col items-end gap-2 lg:flex-row lg:justify-end lg:gap-6">
-              <button type="button" onClick={() => setView('dashboard')} aria-current={view === 'dashboard' ? 'page' : undefined} className="header-button flex items-center gap-2"><CircleGauge size={24} aria-hidden="true" />Dashboard</button>
-              <button type="button" onClick={() => setView('details')} aria-current={view === 'details' ? 'page' : undefined} className="header-button flex items-center gap-2"><Info size={24} aria-hidden="true" />Details</button>
-            </div>
-          </nav>
-        </div>
-      </header>
+          </div>
+          {logoutError && <p role="alert" className="text-sm text-error">{logoutError}</p>}
+          {restoreFailed && <div role="alert" className="mb-4"><p>{saveMessage}</p><button type="button" onClick={() => setRestoreAttempt(n => n + 1)}>Retry saved calendars</button></div>}
+          {statusTone === 'error' && <p className="mb-4 text-sm text-error" role="alert">{statusMessage}</p>}
 
-      <main className="mx-auto max-w-[1240px] px-5 pb-16 pt-6 [overflow-wrap:anywhere]">
-        {logoutError && <p role="alert" className="text-sm text-error">{logoutError}</p>}
-        {restoreFailed && <div role="alert" className="mb-4"><p>{saveMessage}</p><button type="button" onClick={() => setRestoreAttempt(n => n + 1)}>Retry saved calendars</button></div>}
-        {statusTone === 'error' && <p className="mb-4 text-sm text-error" role="alert">{statusMessage}</p>}
+          <div role="status" className="mb-4 text-xs text-muted">
+            {restoring ? 'Loading saved calendars...' : isLoading ? 'Fetching the latest events...' : lastRefreshed ? `Last refreshed at ${lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : null}
+          </div>
+          <div hidden={view !== 'dashboard'}>
+            <Dashboard calendars={savedCalendars} selectedId={selectedCalendarId} events={events} loading={isLoading} failed={statusTone === 'error'} refreshToken={refreshToken} />
+          </div>
 
-        <div role="status" className="mb-4 text-xs text-muted">
-          {restoring ? 'Loading saved calendars...' : isLoading ? 'Fetching the latest events...' : lastRefreshed ? `Last refreshed at ${lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : null}
-        </div>
-        <div hidden={view !== 'dashboard'}>
-          <Dashboard calendars={savedCalendars} selectedId={selectedCalendarId} events={events} loading={isLoading} failed={statusTone === 'error'} refreshToken={refreshToken} />
-        </div>
+          <section hidden={view !== 'details'} aria-labelledby="details-heading">
+            <h2 id="details-heading" className="mb-4 mt-0 text-lg font-medium">Details</h2>
+            {selectedCalendarId ? <div className="grid min-w-0 grid-cols-1 gap-4" aria-label="Selected calendar events">
+              <div><h2 className="m-0 text-lg font-medium">Calendar events</h2><p className="m-0 mt-1 text-sm text-muted">{selectedCalendar?.name} · Date filters below apply to this event list.</p></div>
+              <SummaryCard count={visibleEvents.length} minutes={timedMinutes(visibleEvents)} from={range.from} to={range.to} onRangeChange={(from, to) => setRange({ from, to })} />
+              <EventListCard key={selectedCalendarId} events={visibleEvents} loading={isLoading} emptyMessage={statusTone === 'error' ? 'Events could not be loaded. Try refreshing this calendar.' : range.from && range.to && range.from > range.to ? 'Choose a valid date range above.' : events.length ? 'No events in this date range. Try All dates or choose another range.' : 'This calendar has no events to display.'} />
+            </div> : <p className="py-8 text-sm text-muted">Save a calendar in Calendar Settings to see its details.</p>}
+          </section>
 
-        <section hidden={view !== 'details'} aria-labelledby="details-heading">
-          <h2 id="details-heading" className="mb-4 mt-0 text-lg font-medium">Details</h2>
-          {selectedCalendarId ? <div className="grid min-w-0 grid-cols-1 gap-4" aria-label="Selected calendar events">
-            <div><h2 className="m-0 text-lg font-medium">Calendar events</h2><p className="m-0 mt-1 text-sm text-muted">{selectedCalendar?.name} · Date filters below apply to this event list.</p></div>
-            <SummaryCard count={visibleEvents.length} minutes={timedMinutes(visibleEvents)} from={range.from} to={range.to} onRangeChange={(from, to) => setRange({ from, to })} />
-            <EventListCard key={selectedCalendarId} events={visibleEvents} loading={isLoading} emptyMessage={statusTone === 'error' ? 'Events could not be loaded. Try refreshing this calendar.' : range.from && range.to && range.from > range.to ? 'Choose a valid date range above.' : events.length ? 'No events in this date range. Try All dates or choose another range.' : 'This calendar has no events to display.'} />
-          </div> : <p className="py-8 text-sm text-muted">Save a calendar in Calendar Settings to see its details.</p>}
-        </section>
-
-        <section hidden={view !== 'settings'} aria-label="Calendar settings">
-          <h2 className="mb-5 mt-0 text-lg font-medium">Calendar Settings</h2>
-          <CalendarInputCard
-            rows={calendarRows} disabled={restoring || saving || restoreFailed}
-            pendingCalendar={pendingCalendar} colorEnabled={restoring || colorEnabled} rowMessages={rowMessages}
-            onSave={handleSave} onAddRow={handleAddRow} onRemoveRow={handleRemoveRow}
-            onChangeRow={handleChangeRow} onChangeColor={handleChangeColor} onResolveRow={handleResolveRow}
-          />
-          {selectedCalendarId && <button type="button" className="secondary-button mt-4" onClick={() => setView('dashboard')}>Back to Dashboard</button>}
-        </section>
-      </main>
+          <section hidden={view !== 'settings'} aria-label="Calendar settings">
+            <h2 className="mb-5 mt-0 text-lg font-medium">Calendar Settings</h2>
+            <CalendarInputCard
+              rows={calendarRows} disabled={restoring || saving || restoreFailed}
+              pendingCalendar={pendingCalendar} colorEnabled={restoring || colorEnabled} rowMessages={rowMessages}
+              onSave={handleSave} onAddRow={handleAddRow} onRemoveRow={handleRemoveRow}
+              onChangeRow={handleChangeRow} onChangeColor={handleChangeColor} onResolveRow={handleResolveRow}
+            />
+            {selectedCalendarId && <button type="button" className="secondary-button mt-4" onClick={() => setView('dashboard')}>Back to Dashboard</button>}
+          </section>
+        </main>
+      </div>
     </div>
   );
 }
