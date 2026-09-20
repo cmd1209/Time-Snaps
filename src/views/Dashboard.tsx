@@ -21,6 +21,8 @@ export function Dashboard({ calendars, selectedId, events, loading, failed, refr
   const [comparisonIds, setComparisonIds] = useState<string[]>([]);
   const [comparisons, setComparisons] = useState<Record<string, Comparison>>({});
   const [comparing, setComparing] = useState(false);
+  const [loadedScope, setLoadedScope] = useState('');
+  const loadScope = JSON.stringify([selectedId, refreshToken, calendars.map(calendar => [calendar.id, calendar.calendar_url])]);
   const [monthCount, setMonthCount] = useState(6);
   const [now, setNow] = useState(() => new Date());
   // Keep this week's/month's boundaries current for tabs left open overnight.
@@ -36,7 +38,7 @@ export function Dashboard({ calendars, selectedId, events, loading, failed, refr
 
   useEffect(() => {
     let cancelled = false;
-    const extra = calendars.filter(calendar => comparisonIds.includes(calendar.id) && calendar.id !== selectedId);
+    const extra = calendars.filter(calendar => calendar.id !== selectedId);
     setComparing(extra.length > 0);
     setComparisons({});
     void Promise.all(extra.map(async calendar => {
@@ -49,18 +51,41 @@ export function Dashboard({ calendars, selectedId, events, loading, failed, refr
     })).then(entries => {
       if (cancelled) return;
       setComparisons(Object.fromEntries(entries));
+      setLoadedScope(loadScope);
       setComparing(false);
     });
     return () => { cancelled = true; };
-  }, [calendars, comparisonIds, selectedId, refreshToken]);
+  }, [calendars, selectedId, refreshToken, loadScope]);
 
   const series = [
     ...(selected && !loading && !failed ? [{ id: selected.id, name: selected.name, color: color(selected.id), values: stats.byMonth }] : []),
     ...extraCalendars.flatMap(calendar => {
       const result = comparisons[calendar.id];
-      return result && result.url === calendar.calendar_url && !result.error ? [{ id: calendar.id, name: calendar.name, color: color(calendar.id), values: dashboardStats(result.events, months, now).byMonth }] : [];
+      return loadedScope === loadScope && result && result.url === calendar.calendar_url && !result.error ? [{ id: calendar.id, name: calendar.name, color: color(calendar.id), values: dashboardStats(result.events, months, now).byMonth }] : [];
     })
   ];
+  const otherCalendars = calendars.filter(calendar => calendar.id !== selectedId);
+  const overviewUnavailable = loading || failed || (otherCalendars.length > 0 && (
+    loadedScope !== loadScope || comparing || otherCalendars.some(calendar => {
+      const result = comparisons[calendar.id];
+      return !result || result.url !== calendar.calendar_url || result.error !== null;
+    })
+  ));
+  const allEvents = useMemo(() => [
+    ...events,
+    ...calendars.filter(calendar => calendar.id !== selectedId).flatMap(calendar => {
+      const result = comparisons[calendar.id];
+      return result && result.url === calendar.calendar_url && !result.error ? result.events : [];
+    }),
+  ], [events, calendars, selectedId, comparisons]);
+  const overview = useMemo(() => dashboardStats(allEvents, months, now), [allEvents, months, now]);
+  const overviewHours = (value: number) => overviewUnavailable ? '—' : `${formatHours(value)} Hrs.`;
+  const selectedMetrics = [
+    ['Total Time', stats.total],
+    ['Current Month', stats.currentMonth],
+    ['Monthly Average', stats.monthlyAverage],
+    ['Current Week', stats.currentWeek],
+  ] as const;
   const available = calendars.filter(calendar => calendar.id !== selectedId && !comparisonIds.includes(calendar.id));
   const hours = (value: number) => loading || failed ? '—' : `${formatHours(value)} Hrs.`;
 
@@ -78,27 +103,36 @@ export function Dashboard({ calendars, selectedId, events, loading, failed, refr
       </div>
     </div>
     {!selected ? <p className="py-8 text-sm text-muted">Save a calendar in Calendar Settings to see your dashboard.</p> : <>
-      <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4" aria-label={`Statistics for ${selected.name}`}>
+      <h3 className="mb-3 mt-0 text-sm font-medium text-muted">All calendars</h3>
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4" aria-label="Statistics across all saved calendars">
         <div className="card min-w-0 p-5 sm:p-6" title="Number of saved calendars across your account.">
           <h3 className="m-0 text-xs font-normal">Calendars</h3>
           <p className="m-0 mt-2 text-2xl font-bold tracking-tight">{calendars.length}</p>
         </div>
-        <div className="card min-w-0 p-5 sm:p-6" title="All timed events available in the selected calendar.">
+        <div className="card min-w-0 p-5 sm:p-6" title="All timed events available across your saved calendars.">
           <h3 className="m-0 text-xs font-normal">Total Time</h3>
-          <p className="m-0 mt-2 text-2xl font-bold tracking-tight">{hours(stats.total)}</p>
+          <p className="m-0 mt-2 text-2xl font-bold tracking-tight">{overviewHours(overview.total)}</p>
         </div>
         <div className="card col-span-2 grid min-w-0 grid-cols-2 gap-4 p-5 sm:p-6">
-          <div title="Scheduled hours in the full current month."><h3 className="m-0 text-xs font-normal">Current Month</h3><p className="m-0 mt-2 text-2xl font-bold tracking-tight">{hours(stats.currentMonth)}</p></div>
-          <div title="Scheduled hours Monday through Sunday."><h3 className="m-0 text-xs font-normal">Current Week</h3><p className="m-0 mt-2 text-2xl font-bold tracking-tight">{hours(stats.currentWeek)}</p></div>
+          <div title="Scheduled hours in the full current month."><h3 className="m-0 text-xs font-normal">Current Month</h3><p className="m-0 mt-2 text-2xl font-bold tracking-tight">{overviewHours(overview.currentMonth)}</p></div>
+          <div title="Scheduled hours Monday through Sunday."><h3 className="m-0 text-xs font-normal">Current Week</h3><p className="m-0 mt-2 text-2xl font-bold tracking-tight">{overviewHours(overview.currentWeek)}</p></div>
         </div>
       </div>
-      <RecentActivity events={events} now={now} unavailable={loading || failed} />
+      <h3 className="mb-3 mt-0 text-sm font-medium text-muted">Selected calendar · {selected.name}</h3>
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4" aria-label={`Statistics for ${selected.name}`}>
+        {selectedMetrics.map(([label, value]) => <div key={label} className="card min-w-0 p-5 sm:p-6" title={label === 'Monthly Average' ? `Average over the ${monthCount} displayed months, including zero months.` : undefined}>
+          <h4 className="m-0 text-xs font-normal">{label}</h4>
+          <p className="m-0 mt-2 text-2xl font-bold tracking-tight">{hours(value)}</p>
+        </div>)}
+      </div>
+      {(loading || comparing || (otherCalendars.length > 0 && loadedScope !== loadScope)) && <p role="status" className="text-sm text-muted">Loading totals across all calendars…</p>}
+      {loadedScope === loadScope && otherCalendars.map(calendar => comparisons[calendar.id]?.error && <p key={calendar.id} role="alert" className="text-sm text-error">{calendar.name}: {comparisons[calendar.id].error} All-calendar totals are unavailable. Use Refresh to retry.</p>)}
+      <RecentActivity events={allEvents} now={now} unavailable={overviewUnavailable} />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-xs text-muted">
-        <p className="m-0">Statistics for <strong className="font-medium text-muted">{selected.name}</strong>. Monthly average: {hours(stats.monthlyAverage)}. Comparisons appear below.</p>
+        <p className="m-0">Statistics for <strong className="font-medium text-muted">{selected.name}</strong>. Comparisons appear below.</p>
         <label className="flex items-center gap-2">Chart period<select className="rounded-md px-2 py-1 text-xs text-ink" value={monthCount} onChange={event => setMonthCount(Number(event.target.value))}><option value={6}>Last 6 months</option><option value={12}>Last 12 months</option></select></label>
       </div>
       {(loading || comparing) && <p role="status" className="text-sm text-ink">Loading calendar charts...</p>}
-      {extraCalendars.map(calendar => comparisons[calendar.id]?.error && <p key={calendar.id} role="alert" className="text-sm text-error">{calendar.name}: {comparisons[calendar.id].error} Use Refresh to retry.</p>)}
       <DashboardCharts months={months} series={series} />
       {!loading && !comparing && series.length > 0 && series.every(item => item.values.every(value => value === 0)) && <p className="text-sm text-muted">No timed events in these months. Try a longer chart period.</p>}
       <p className="mt-4 text-xs leading-relaxed text-muted">Scheduled hours, excluding all-day events. Months and weeks use your local time zone and event start dates. Monthly average includes zero months and the current month. Recurring series are not expanded yet.</p>
