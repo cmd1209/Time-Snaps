@@ -376,21 +376,8 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
     void loadRows([{ url: selectedCalendar.calendar_url }]);
   }
 
-  return (
-    <div className="min-h-screen text-ink">
-      <a href="#main-content" className="skip-link">Skip to content</a>
-      <header className="mx-auto grid max-w-[1240px] grid-cols-1 gap-5 px-4 pb-6 pt-4 lg:grid-cols-[1fr_auto] lg:items-center lg:px-6 lg:pt-8">
-        <img src="/assets/logo.svg" className="mx-auto h-[49px] w-[152px] lg:order-2 lg:mx-0" alt="Time Snaps — Your time at a glance" />
-        <div className="flex min-w-0 items-center justify-between gap-4 lg:justify-start">
-          <p className="m-0 min-w-0 text-2xl font-light tracking-tight lg:order-2">Hi, <strong className="font-semibold [overflow-wrap:anywhere]">{email.split('@')[0] || 'there'}</strong></p>
-          <AccountMenu key={userId} userId={userId} email={email} disabled={saving} onLogout={onLogout} />
-        </div>
-      </header>
-      <div className="mx-auto grid max-w-[1240px] grid-cols-1 gap-4 px-4 lg:grid-cols-[184px_minmax(0,1fr)] lg:gap-6 lg:px-6">
-        <AppNavigation view={view} onViewChange={setView} onRefresh={refreshCalendars} refreshing={isLoading} refreshDisabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} />
-        <main id="main-content" tabIndex={-1} className="min-w-0 pb-[calc(112px+env(safe-area-inset-bottom))] lg:pb-12 [overflow-wrap:anywhere]">
-          <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
-            <label className="header-calendar relative flex min-w-0 w-fit max-w-full items-center gap-2 px-0.5 py-1.5">
+  const calendarSelection = (
+    <label className="header-calendar relative flex min-w-0 w-fit max-w-full items-center gap-2 px-0.5 py-1.5">
               <CalendarDays size={24} aria-hidden="true" />
               <span className="sr-only">Selected calendar</span>
               <span className="relative min-w-0 max-w-[min(360px,calc(100vw-100px))]">
@@ -405,16 +392,30 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
               </span>
               <ChevronDown size={24} aria-hidden="true" className="absolute right-0.5 pointer-events-none" />
             </label>
-          </div>
+  );
+  const refreshStatus = restoring ? 'Loading saved calendars...' : isLoading ? 'Fetching the latest events...' : lastRefreshed ? `Last refreshed at ${lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : null;
+
+  return (
+    <div className="min-h-screen text-ink">
+      <a href="#main-content" className="skip-link">Skip to content</a>
+      <header className="mx-auto grid max-w-[1240px] grid-cols-1 gap-5 px-4 pb-6 pt-4 lg:grid-cols-[1fr_auto] lg:items-center lg:px-6 lg:pt-8">
+        <img src="/assets/logo.svg" className="mx-auto h-[49px] w-[152px] lg:order-2 lg:mx-0" alt="Time Snaps — Your time at a glance" />
+        <div className="flex min-w-0 items-center justify-between gap-4 lg:justify-start">
+          <p className="m-0 min-w-0 text-2xl font-light tracking-tight lg:order-2">Hi, <strong className="font-semibold [overflow-wrap:anywhere]">{email.split('@')[0] || 'there'}</strong></p>
+          <AccountMenu key={userId} userId={userId} email={email} disabled={saving} onLogout={onLogout} />
+        </div>
+      </header>
+      <div className="mx-auto grid max-w-[1240px] grid-cols-1 gap-4 px-4 lg:grid-cols-[184px_minmax(0,1fr)] lg:gap-6 lg:px-6">
+        <AppNavigation view={view} onViewChange={setView} onRefresh={refreshCalendars} refreshing={isLoading} refreshDisabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} />
+        <main id="main-content" tabIndex={-1} className="min-w-0 pb-[calc(112px+env(safe-area-inset-bottom))] lg:pb-12 [overflow-wrap:anywhere]">
+          {view !== 'dashboard' && <div className="mb-4">{calendarSelection}</div>}
           {logoutError && <p role="alert" className="text-sm text-error">{logoutError}</p>}
           {restoreFailed && <div role="alert" className="mb-4"><p>{saveMessage}</p><button type="button" onClick={() => setRestoreAttempt(n => n + 1)}>Retry saved calendars</button></div>}
           {statusTone === 'error' && <p className="mb-4 text-sm text-error" role="alert">{statusMessage}</p>}
 
-          <div role="status" className="mb-4 text-xs text-muted">
-            {restoring ? 'Loading saved calendars...' : isLoading ? 'Fetching the latest events...' : lastRefreshed ? `Last refreshed at ${lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : null}
-          </div>
+          {view !== 'dashboard' && <div role="status" className="mb-4 text-xs text-muted">{refreshStatus}</div>}
           <div hidden={view !== 'dashboard'}>
-            <Dashboard calendars={savedCalendars} selectedId={selectedCalendarId} events={events} loading={isLoading} failed={statusTone === 'error'} refreshToken={refreshToken} />
+            <Dashboard calendarSelection={calendarSelection} refreshStatus={refreshStatus} calendars={savedCalendars} selectedId={selectedCalendarId} events={events} loading={isLoading} failed={statusTone === 'error'} refreshToken={refreshToken} />
           </div>
 
           <section hidden={view !== 'details'} aria-labelledby="details-heading">
