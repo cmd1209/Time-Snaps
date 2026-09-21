@@ -405,39 +405,40 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
           <AccountMenu key={userId} userId={userId} email={email} disabled={saving} onLogout={onLogout} />
         </div>
       </header>
-      <div className="mx-auto grid max-w-[1240px] grid-cols-1 gap-4 px-4 lg:grid-cols-[184px_minmax(0,1fr)] lg:gap-6 lg:px-6">
-        <AppNavigation view={view} onViewChange={setView} onRefresh={refreshCalendars} refreshing={isLoading} refreshDisabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} />
-        <main id="main-content" tabIndex={-1} className="min-w-0 pb-[calc(112px+env(safe-area-inset-bottom))] lg:pb-12 [overflow-wrap:anywhere]">
-          {view !== 'dashboard' && <div className="mb-4">{calendarSelection}</div>}
-          {logoutError && <p role="alert" className="text-sm text-error">{logoutError}</p>}
-          {restoreFailed && <div role="alert" className="mb-4"><p>{saveMessage}</p><button type="button" onClick={() => setRestoreAttempt(n => n + 1)}>Retry saved calendars</button></div>}
-          {statusTone === 'error' && <p className="mb-4 text-sm text-error" role="alert">{statusMessage}</p>}
-
-          {view !== 'dashboard' && <div role="status" className="mb-4 text-xs text-muted">{refreshStatus}</div>}
-          <div hidden={view !== 'dashboard'}>
-            <Dashboard calendarSelection={calendarSelection} refreshStatus={refreshStatus} calendars={savedCalendars} selectedId={selectedCalendarId} events={events} loading={isLoading} failed={statusTone === 'error'} refreshToken={refreshToken} />
-          </div>
-
-          <section hidden={view !== 'details'} aria-labelledby="details-heading">
-            <h2 id="details-heading" className="mb-4 mt-0 text-lg font-medium">Details</h2>
-            {selectedCalendarId ? <div className="grid min-w-0 grid-cols-1 gap-4" aria-label="Selected calendar events">
-              <div><h2 className="m-0 text-lg font-medium">Calendar events</h2><p className="m-0 mt-1 text-sm text-muted">{selectedCalendar?.name} · Date filters below apply to this event list.</p></div>
+      <div className="content-container mx-auto max-w-[1240px] py-4 lg:py-6 br-lg:rounded-lg">
+        <div className="mx-auto grid max-w-[1240px] grid-cols-1 gap-4 px-4 lg:grid-cols-[184px_minmax(0,1fr)] lg:gap-6 lg:px-6">
+          <AppNavigation view={view} onViewChange={setView} onRefresh={refreshCalendars} refreshing={isLoading} refreshDisabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} />
+          <main id="main-content" tabIndex={-1} className="min-w-0 pb-[calc(112px+env(safe-area-inset-bottom))] lg:pb-12 [overflow-wrap:anywhere]">
+            <section hidden={view !== 'details'} aria-labelledby="details-heading">
+              <h1 id="details-heading" className="text-xxl font-medium">Details</h1>
+              {view !== 'dashboard' && <div role="status" className="mb-6 mt-1 text-xs text-muted">{refreshStatus}</div>}
+              {selectedCalendarId ? <div className="grid min-w-0 grid-cols-1 gap-4" aria-label="Selected calendar events">
+              {view !== 'dashboard' && <div className="mb-4">{calendarSelection}</div>}
+              {logoutError && <p role="alert" className="text-sm text-error">{logoutError}</p>}
+              {restoreFailed && <div role="alert" className="mb-4"><p>{saveMessage}</p><button type="button" onClick={() => setRestoreAttempt(n => n + 1)}>Retry saved calendars</button></div>}
+              {statusTone === 'error' && <p className="mb-4 text-sm text-error" role="alert">{statusMessage}</p>}
               <SummaryCard count={visibleEvents.length} minutes={timedMinutes(visibleEvents)} from={range.from} to={range.to} onRangeChange={(from, to) => setRange({ from, to })} />
               <EventListCard key={selectedCalendarId} events={visibleEvents} loading={isLoading} emptyMessage={statusTone === 'error' ? 'Events could not be loaded. Try refreshing this calendar.' : range.from && range.to && range.from > range.to ? 'Choose a valid date range above.' : events.length ? 'No events in this date range. Try All dates or choose another range.' : 'This calendar has no events to display.'} />
-            </div> : <p className="py-8 text-sm text-muted">Save a calendar in Calendar Settings to see its details.</p>}
-          </section>
+              </div> : <p className="py-8 text-sm text-muted">Save a calendar in Calendar Settings to see its details.</p>}
+            </section>
 
-          <section hidden={view !== 'settings'} aria-label="Calendar settings">
-            <h2 className="mb-5 mt-0 text-lg font-medium">Calendar Settings</h2>
-            <CalendarInputCard
-              rows={calendarRows} disabled={restoring || saving || restoreFailed}
-              pendingCalendar={pendingCalendar} colorEnabled={restoring || colorEnabled} rowMessages={rowMessages}
-              onSave={handleSave} onAddRow={handleAddRow} onRemoveRow={handleRemoveRow}
-              onChangeRow={handleChangeRow} onChangeColor={handleChangeColor} onResolveRow={handleResolveRow}
-            />
-            {selectedCalendarId && <button type="button" className="secondary-button mt-4" onClick={() => setView('dashboard')}>Back to Dashboard</button>}
-          </section>
-        </main>
+            <div hidden={view !== 'dashboard'}>
+              <Dashboard calendarSelection={calendarSelection} refreshStatus={refreshStatus} calendars={savedCalendars} selectedId={selectedCalendarId} events={events} loading={isLoading} failed={statusTone === 'error'} refreshToken={refreshToken} />
+            </div>
+
+
+            <section hidden={view !== 'settings'} aria-label="Calendar settings">
+              <h2 className="mb-5 mt-0 text-lg font-medium">Calendar Settings</h2>
+              <CalendarInputCard
+                rows={calendarRows} disabled={restoring || saving || restoreFailed}
+                pendingCalendar={pendingCalendar} colorEnabled={restoring || colorEnabled} rowMessages={rowMessages}
+                onSave={handleSave} onAddRow={handleAddRow} onRemoveRow={handleRemoveRow}
+                onChangeRow={handleChangeRow} onChangeColor={handleChangeColor} onResolveRow={handleResolveRow}
+              />
+              {selectedCalendarId && <button type="button" className="secondary-button mt-4" onClick={() => setView('dashboard')}>Back to Dashboard</button>}
+            </section>
+          </main>
+        </div>
       </div>
     </div>
   );

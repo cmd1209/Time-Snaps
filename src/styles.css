@@ -26,6 +26,7 @@
   --color-line: rgb(222 232 255 / 22%);
   
   --bg-gradient: linear-gradient(180deg, #2A3554 0%, #101521 100%);
+  --bg-gradient-backwards: linear-gradient(0deg, #2A3554 -150%, #101521 200%);
   --bg-gradient-alt: linear-gradient(180deg, #2A3554 0%, #2A3554 225%);
   --bg-surface-gradient: linear-gradient(180deg, #2A3554  0%,  #2A3554 100%);
 }
@@ -68,6 +69,11 @@ textarea {
 code,
 pre {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+.content-container {
+  background: var(--bg-gradient-backwards);
+  border-radius: 12px;
 }
 
 /* Shared navigation changes position through responsive utilities in JSX. */
