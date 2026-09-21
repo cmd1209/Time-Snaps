@@ -405,7 +405,7 @@ export default function App({ userId, email, firstName, lastName, onLogout, logo
           <AccountMenu key={userId} userId={userId} email={email} firstName={firstName} lastName={lastName} disabled={saving} onLogout={onLogout} />
         </div>
       </header>
-      <div className="content-container mx-auto max-w-[1240px] py-4 lg:py-6 br-lg:rounded-lg">
+      <div className="content-container mx-auto max-w-[1240px] py-4 lg:py-6 rounded-4xl">
         <div className="mx-auto grid max-w-[1240px] grid-cols-1 gap-4 px-4 lg:grid-cols-[184px_minmax(0,1fr)] lg:gap-6 lg:px-6">
           <AppNavigation view={view} onViewChange={setView} onRefresh={refreshCalendars} refreshing={isLoading} refreshDisabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} />
           <main id="main-content" tabIndex={-1} className="min-w-0 pb-[calc(112px+env(safe-area-inset-bottom))] lg:pb-12 [overflow-wrap:anywhere]">

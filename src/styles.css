@@ -73,7 +73,6 @@ pre {
 
 .content-container {
   background: var(--bg-gradient-backwards);
-  border-radius: 12px;
 }
 
 /* Shared navigation changes position through responsive utilities in JSX. */
