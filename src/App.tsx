@@ -11,9 +11,9 @@ import { CalendarEvent, CalendarInputRow, CalendarLoadItem, StatusTone, SavedCal
 import { filterEvents, timedMinutes } from './utils/eventView';
 import { loadCalendar, loadCalendarPreview } from './utils/calendar';
 
-interface AppProps { userId: string; email: string; onLogout: () => Promise<void>; logoutError: string }
+interface AppProps { userId: string; email: string; firstName: string; lastName: string; onLogout: () => Promise<void>; logoutError: string }
 
-export default function App({ userId, email, onLogout, logoutError }: AppProps) {
+export default function App({ userId, email, firstName, lastName, onLogout, logoutError }: AppProps) {
   const [savedCalendars, setSavedCalendars] = useState<SavedCalendar[]>([]);
   const [selectedCalendarId, setSelectedCalendarId] = useState('');
   const loadRequest = useRef(0);
@@ -401,8 +401,8 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
       <header className="mx-auto flex justify-between max-w-[1240px] px-4 py-4 lg:px-6 lg:py-6">
         <img src="/assets/logo.svg" className="h-auto w-[180px]" alt="Time Snaps — Your time at a glance" />
         <div className="flex min-w-0 items-center justify-between gap-4 lg:justify-start">
-          <p className="m-0 min-w-0 text-2xl font-light tracking-tight hidden lg:block">Hi, <strong className="font-semibold [overflow-wrap:anywhere]">{email.split('@')[0] || 'there'}</strong></p>
-          <AccountMenu key={userId} userId={userId} email={email} disabled={saving} onLogout={onLogout} />
+          <p className="m-0 min-w-0 text-2xl font-light tracking-tight hidden lg:block">Hi, <strong className="font-semibold [overflow-wrap:anywhere]">{firstName.split('@')[0] || 'there'}</strong></p>
+          <AccountMenu key={userId} userId={userId} email={email} firstName={firstName} lastName={lastName} disabled={saving} onLogout={onLogout} />
         </div>
       </header>
       <div className="content-container mx-auto max-w-[1240px] py-4 lg:py-6 br-lg:rounded-lg">

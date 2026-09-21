@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabase';
 interface AccountMenuProps {
   userId: string;
   email: string;
+  firstName: string;
+  lastName: string;
   disabled: boolean;
   onLogout: () => Promise<void>;
 }
@@ -14,7 +16,12 @@ function errorMessage(error: unknown): string {
   return /bucket not found/i.test(message) ? 'Avatar uploads are not set up yet. Please finish the avatar storage setup in Supabase.' : message;
 }
 
-export function AccountMenu({ userId, email, disabled, onLogout }: AccountMenuProps) {
+export function AccountMenu({ userId, email, firstName, lastName, disabled, onLogout }: AccountMenuProps) {
+  const [draftFirstName, setDraftFirstName] = useState(firstName);
+  const [draftLastName, setDraftLastName] = useState(lastName);
+  const [savingName, setSavingName] = useState(false);
+  const [nameMessage, setNameMessage] = useState('');
+  const [nameError, setNameError] = useState('');
   const [avatar, setAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -26,6 +33,35 @@ export function AccountMenu({ userId, email, disabled, onLogout }: AccountMenuPr
   const pending = useRef(false);
   const path = `${userId}/avatar`;
   const blocked = disabled || busy || loading;
+
+  useEffect(() => {
+    setDraftFirstName(firstName);
+    setDraftLastName(lastName);
+  }, [firstName, lastName]);
+
+  async function saveName(event: React.FormEvent) {
+    event.preventDefault();
+    if (!supabase || disabled || savingName) return;
+    setSavingName(true);
+    setNameMessage('');
+    setNameError('');
+    try {
+      const nextFirstName = draftFirstName.trim();
+      const nextLastName = draftLastName.trim();
+      const { error } = await supabase.auth.updateUser({
+        data: { first_name: nextFirstName, last_name: nextLastName }
+      });
+      if (error) throw error;
+      if (!alive.current) return;
+      setDraftFirstName(nextFirstName);
+      setDraftLastName(nextLastName);
+      setNameMessage('Name saved.');
+    } catch (error) {
+      if (alive.current) setNameError(`Could not save name. ${errorMessage(error)}`);
+    } finally {
+      if (alive.current) setSavingName(false);
+    }
+  }
 
   useEffect(() => {
     alive.current = true;
@@ -115,8 +151,15 @@ export function AccountMenu({ userId, email, disabled, onLogout }: AccountMenuPr
     <summary className="size-12 flex cursor-pointer list-none items-center justify-center overflow-hidden rounded-full bg-accent-soft text-sm font-medium text-ink [&::-webkit-details-marker]:hidden" aria-label="Account menu">
       {avatar ? <img src={avatar} alt="" className="size-full object-cover" /> : initial}
     </summary>
-    <div className="account-panel absolute right-0 lg:left-0 lg:right-auto top-[calc(100%+8px)] z-[2] w-[min(280px,calc(100vw-40px))] p-[18px] text-ink">
+    <div className="account-panel absolute right-0 lg:left-0 lg:right-auto top-[calc(100%+8px)] z-[2] max-h-[calc(100dvh-100px)] overflow-y-auto w-[min(280px,calc(100vw-40px))] p-[18px] text-ink">
       <p className="text-sm [overflow-wrap:anywhere]">{email}</p>
+      <form className="mb-4 grid grid-cols-1 gap-3" onSubmit={saveName} aria-label="Profile name">
+        <label className="field grid grid-cols-1 gap-2"><span>First name (optional)</span><input type="text" autoComplete="given-name" value={draftFirstName} disabled={disabled || savingName} onChange={event => { setDraftFirstName(event.target.value); setNameMessage(''); setNameError(''); }} /></label>
+        <label className="field grid grid-cols-1 gap-2"><span>Last name (optional)</span><input type="text" autoComplete="family-name" value={draftLastName} disabled={disabled || savingName} onChange={event => { setDraftLastName(event.target.value); setNameMessage(''); setNameError(''); }} /></label>
+        <button type="submit" className="secondary-button text-sm" disabled={disabled || savingName}>{savingName ? 'Saving name...' : 'Save name'}</button>
+        {nameMessage && <p role="status" className="text-sm">{nameMessage}</p>}
+        {nameError && <p role="alert" className="text-sm text-error">{nameError}</p>}
+      </form>
       <div className="mb-3 flex items-center gap-3">
         <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-accent-soft text-lg text-ink">
           {avatar ? <img src={avatar} alt="Your avatar" className="size-full object-cover" /> : <span aria-label="Default avatar">{initial}</span>}
@@ -135,7 +178,7 @@ export function AccountMenu({ userId, email, disabled, onLogout }: AccountMenuPr
       {loading && <p role="status" className="text-sm">Loading avatar...</p>}
       {message && <p role="status" className="text-sm">{message}</p>}
       {error && <div role="alert" className="mb-3 text-sm text-error"><p>{error}</p><button type="button" className="ghost-button" disabled={blocked} onClick={() => setAttempt(value => value + 1)}>Retry loading avatar</button></div>}
-      <button type="button" className="secondary-button flex items-center gap-2" disabled={disabled || busy} onClick={() => void onLogout()}><LogOut size={16} aria-hidden="true" />Log out</button>
+      <button type="button" className="secondary-button flex items-center gap-2" disabled={disabled || busy || savingName} onClick={() => void onLogout()}><LogOut size={16} aria-hidden="true" />Log out</button>
     </div>
   </details>;
 }

@@ -5,6 +5,8 @@ import { Card } from './Card';
 export function AuthCard() {
   const [signup, setSignup] = useState(false);
   const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -18,7 +20,10 @@ export function AuthCard() {
       if (signup) {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(), password,
-          options: { emailRedirectTo: `${window.location.origin}/` }
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { first_name: firstName.trim(), last_name: lastName.trim() }
+          }
         });
         if (error) throw error;
         if (!data.session) setMessage('Check your email to confirm your account, then log in.');
@@ -34,6 +39,10 @@ export function AuthCard() {
 
   return <Card title={signup ? 'Create an account' : 'Log in'} subtitle="Save your public calendars and access them next time.">
     <form className="grid grid-cols-1 gap-3" onSubmit={submit}>
+      {signup && <>
+        <label className="field grid grid-cols-1 gap-2"><span>First name (optional)</span><input type="text" autoComplete="given-name" value={firstName} disabled={busy} onChange={e => setFirstName(e.target.value)} /></label>
+        <label className="field grid grid-cols-1 gap-2"><span>Last name (optional)</span><input type="text" autoComplete="family-name" value={lastName} disabled={busy} onChange={e => setLastName(e.target.value)} /></label>
+      </>}
       <label className="field grid grid-cols-1 gap-2"><span>Email</span><input type="email" autoComplete="email" required value={email} disabled={busy} onChange={e => setEmail(e.target.value)} /></label>
       <label className="field grid grid-cols-1 gap-2"><span>Password</span><input type="password" autoComplete={signup ? 'new-password' : 'current-password'} minLength={signup ? 6 : undefined} required value={password} disabled={busy} onChange={e => setPassword(e.target.value)} /></label>
       <button disabled={busy}>{busy ? 'Please wait...' : signup ? 'Sign up' : 'Log in'}</button>
