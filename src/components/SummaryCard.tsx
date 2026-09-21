@@ -28,9 +28,9 @@ export function SummaryCard({ count, minutes, from, to, onRangeChange }: Summary
         </div>
       </div>
       <div className="mt-[18px] flex flex-wrap items-end justify-between gap-4">
-        <div className="grid flex-[1_1_320px] grid-cols-2 gap-3">
-          <label className="field grid grid-cols-1 gap-2"><span>From</span><input type="date" value={from} aria-invalid={invalid} onChange={event => onRangeChange(event.target.value, to)} /></label>
-          <label className="field grid grid-cols-1 gap-2"><span>To</span><input type="date" value={to} aria-invalid={invalid} onChange={event => onRangeChange(from, event.target.value)} /></label>
+        <div className="grid min-w-0 flex-[1_1_320px] grid-cols-2 gap-3">
+          <label className="field grid min-w-0 grid-cols-1 gap-2"><span>From</span><input type="date" value={from} aria-invalid={invalid} onChange={event => onRangeChange(event.target.value, to)} /></label>
+          <label className="field grid min-w-0 grid-cols-1 gap-2"><span>To</span><input type="date" value={to} aria-invalid={invalid} onChange={event => onRangeChange(from, event.target.value)} /></label>
         </div>
         <dl className="overview-totals m-0 flex flex-[0_1_auto] flex-wrap items-center gap-8 [@media(max-width:480px)]:gap-6">
           <div><dt>Events</dt><dd>{count}</dd></div>

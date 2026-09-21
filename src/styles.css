@@ -159,6 +159,26 @@ textarea::placeholder {
   border-radius: 8px;
 }
 
+/* iOS date controls otherwise impose a native width on narrow grid columns.
+   Explicit height also keeps empty dates from collapsing with appearance:none. */
+.period-card input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  min-height: 44px;
+  font-size: 16px;
+}
+
+.period-card input[type="date"]::-webkit-date-and-time-value {
+  min-width: 0;
+  min-height: 1.5em;
+  text-align: left;
+}
+
 button {
   width: fit-content;
   padding: 10px 14px;
