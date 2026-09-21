@@ -398,10 +398,10 @@ export default function App({ userId, email, onLogout, logoutError }: AppProps) 
   return (
     <div className="min-h-screen text-ink">
       <a href="#main-content" className="skip-link">Skip to content</a>
-      <header className="mx-auto grid max-w-[1240px] grid-cols-1 gap-5 px-4 pb-6 pt-4 lg:grid-cols-[1fr_auto] lg:items-center lg:px-6 lg:pt-8">
-        <img src="/assets/logo.svg" className="mx-auto h-[49px] w-[152px] lg:order-2 lg:mx-0" alt="Time Snaps — Your time at a glance" />
+      <header className="mx-auto flex justify-between max-w-[1240px] px-4 py-4 lg:px-6 lg:py-6">
+        <img src="/assets/logo.svg" className="h-auto w-[180px]" alt="Time Snaps — Your time at a glance" />
         <div className="flex min-w-0 items-center justify-between gap-4 lg:justify-start">
-          <p className="m-0 min-w-0 text-2xl font-light tracking-tight lg:order-2">Hi, <strong className="font-semibold [overflow-wrap:anywhere]">{email.split('@')[0] || 'there'}</strong></p>
+          <p className="m-0 min-w-0 text-2xl font-light tracking-tight hidden lg:block">Hi, <strong className="font-semibold [overflow-wrap:anywhere]">{email.split('@')[0] || 'there'}</strong></p>
           <AccountMenu key={userId} userId={userId} email={email} disabled={saving} onLogout={onLogout} />
         </div>
       </header>

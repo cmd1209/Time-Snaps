@@ -106,9 +106,17 @@ export function Dashboard({ calendarSelection, refreshStatus, calendars, selecte
           <h3 className="m-0 text-xs font-normal">Total Time</h3>
           <p className="m-0 mt-2 text-2xl font-bold tracking-tight">{overviewHours(overview.total)}</p>
         </div>
-        <div className="card col-span-2 grid min-w-0 grid-cols-2 gap-4 p-5 sm:p-6">
-          <div title="Scheduled hours in the full current month."><h3 className="m-0 text-xs font-normal">Current Month</h3><p className="m-0 mt-2 text-2xl font-bold tracking-tight">{overviewHours(overview.currentMonth)}</p></div>
-          <div title="Scheduled hours Monday through Sunday."><h3 className="m-0 text-xs font-normal">Current Week</h3><p className="m-0 mt-2 text-2xl font-bold tracking-tight">{overviewHours(overview.currentWeek)}</p></div>
+        <div className="card min-w-0 p-5 sm:p-6">
+          <div title="Scheduled hours in the full current month.">
+            <h3 className="m-0 text-xs font-normal">Current Month</h3>
+            <p className="m-0 mt-2 text-2xl font-bold tracking-tight">{overviewHours(overview.currentMonth)}</p>
+          </div>
+        </div>
+        <div className="card min-w-0 p-5 sm:p-6">
+          <div title="Scheduled hours Monday through Sunday.">
+            <h3 className="m-0 text-xs font-normal">Current Week</h3>
+            <p className="m-0 mt-2 text-2xl font-bold tracking-tight">{overviewHours(overview.currentWeek)}</p>
+          </div>
         </div>
       </div>
       {(loading || comparing || (otherCalendars.length > 0 && loadedScope !== loadScope)) && <p role="status" className="text-sm text-muted">Loading totals across all calendars…</p>}
