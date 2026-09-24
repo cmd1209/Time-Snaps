@@ -1,12 +1,13 @@
 import { useId } from 'react';
 import type { DashboardMonth } from '../utils/dashboard';
 import { formatHours } from '../utils/dashboard';
+import { ChartLineGlow, chartAreaOpacity, chartDotRadius, chartLineWidth } from './ChartLineStyle';
 
 export interface ChartSeries { id: string; name: string; color: string; values: number[] }
 interface Props { months: DashboardMonth[]; series: ChartSeries[] }
 
 export function DashboardCharts({ months, series }: Props) {
-  const id = useId();
+  const id = useId().replace(/:/g, '');
   const width = 560, height = 300, left = 44, right = 12, top = 20, bottom = 42;
   const plotWidth = width - left - right, plotHeight = height - top - bottom;
   const maximum = Math.max(1, ...months.map((_, i) => series.reduce((sum, item) => sum + item.values[i], 0)));
@@ -14,6 +15,7 @@ export function DashboardCharts({ months, series }: Props) {
   const y = (value: number) => top + plotHeight * (1 - value / ceiling);
   const step = plotWidth / months.length;
   const x = (i: number) => left + step * (i + 0.5);
+  const comparisonSeries = [...series].sort((a, b) => b.values.reduce((sum, value) => sum + value, 0) - a.values.reduce((sum, value) => sum + value, 0));
   const grid = () => <>
     {[0, 1, 2, 3, 4].map(tick => {
       const value = ceiling * tick / 4;
@@ -45,10 +47,12 @@ export function DashboardCharts({ months, series }: Props) {
         <h3 className="m-0 text-sm font-medium text-ink">Calendar comparison</h3>
         <svg className="mt-4 block h-auto w-full overflow-visible text-ink" viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby={`${id}-lines`}>
           <title id={`${id}-lines`}>Monthly scheduled hours for each calendar. Exact values are available in the chart data table below.</title>
+          <defs>{comparisonSeries.map((item, index) => <ChartLineGlow key={item.id} id={`${id}-line-glow-${index}`} color={item.color} x={-20} y={-20} width={width + 40} height={height + 40} />)}</defs>
           {grid()}
-          {series.map(item => <g key={item.id}>
-            <polyline points={item.values.map((value, i) => `${x(i)},${y(value)}`).join(' ')} fill="none" stroke={item.color} strokeWidth="3" strokeLinejoin="round" />
-            {item.values.map((value, i) => <circle key={months[i].key} cx={x(i)} cy={y(value)} r="3.5" fill={item.color}><title>{`${item.name}, ${months[i].fullLabel}: ${formatHours(value)} hours`}</title></circle>)}
+          {comparisonSeries.map(item => <path key={item.id} d={`M ${item.values.map((value, i) => `${x(i)} ${y(value)}`).join(' L ')} L ${x(months.length - 1)} ${y(0)} L ${x(0)} ${y(0)} Z`} fill={item.color} fillOpacity={chartAreaOpacity} />)}
+          {comparisonSeries.map((item, index) => <g key={item.id}>
+            <polyline points={item.values.map((value, i) => `${x(i)},${y(value)}`).join(' ')} fill="none" stroke={item.color} strokeWidth={chartLineWidth} strokeLinejoin="round" filter={`url(#${id}-line-glow-${index})`} />
+            {item.values.map((value, i) => <circle key={months[i].key} cx={x(i)} cy={y(value)} r={chartDotRadius} fill={item.color}><title>{`${item.name}, ${months[i].fullLabel}: ${formatHours(value)} hours`}</title></circle>)}
           </g>)}
         </svg>
       </section>

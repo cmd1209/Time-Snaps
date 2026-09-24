@@ -2,11 +2,12 @@ import { useId } from 'react';
 import type { CalendarEvent } from '../types';
 import { dashboardDays, formatHours } from '../utils/dashboard';
 import { CalendarDonutChart, type DonutCalendar } from './CalendarDonutChart';
+import { ChartLineGlow, chartAreaOpacity, chartDotRadius, chartLineWidth } from './ChartLineStyle';
 
 interface ActivityCalendar extends DonutCalendar { dailyHours: number[] }
 
 export function RecentActivity({ events, now, unavailable, calendars }: { events: CalendarEvent[]; now: Date; unavailable: boolean; calendars: ActivityCalendar[] }) {
-  const chartId = useId();
+  const chartId = useId().replace(/:/g, '');
   const days = dashboardDays(events, now);
   const total = calendars.reduce((sum, calendar) => sum + calendar.hours, 0);
   const dateLabel = (date: Date) => date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -17,6 +18,7 @@ export function RecentActivity({ events, now, unavailable, calendars }: { events
   const x = (index: number) => left + index / (days.length - 1) * plotWidth;
   const y = (hours: number) => top + (1 - hours / ceiling) * plotHeight;
   const areas = [...calendars].sort((a, b) => b.hours - a.hours);
+  const activeAreas = areas.filter(calendar => calendar.hours > 0);
   return <section className="card mb-6 min-w-0 p-5 sm:p-6" aria-label="Last 30 days of scheduled hours across all calendars">
     <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
       <h3 className="m-0 text-sm font-medium text-ink">Last 30 Days · All calendars</h3>
@@ -41,6 +43,7 @@ export function RecentActivity({ events, now, unavailable, calendars }: { events
       <div className="max-w-full overflow-x-auto">
         <svg className="block h-auto min-w-[600px] w-full text-muted" viewBox={`0 0 ${width} ${height}`} role="img" aria-labelledby={`${chartId}-title`}>
           <title id={`${chartId}-title`}>Overlapping daily scheduled hours for every saved calendar over the last 30 days. Exact values are available in the daily hours table below.</title>
+          <defs>{activeAreas.map((calendar, index) => <ChartLineGlow key={calendar.id} id={`${chartId}-line-glow-${index}`} color={calendar.color} x={-20} y={-20} width={width + 40} height={height + 40} />)}</defs>
           {[0, 1, 2, 3, 4].map(tick => {
             const value = ceiling * tick / 4;
             return <g key={tick}>
@@ -49,15 +52,21 @@ export function RecentActivity({ events, now, unavailable, calendars }: { events
             </g>;
           })}
           {[0, 9, 19, 29].map(index => <text key={index} x={x(index)} y={height - 8} textAnchor={index === 0 ? 'start' : index === 29 ? 'end' : 'middle'} fill="currentColor" fontSize="11">{index === 29 ? 'Today' : dateLabel(days[index].date)}</text>)}
-          {total > 0 ? areas.filter(calendar => calendar.hours > 0).map(calendar => {
-            const points = calendar.dailyHours.map((hours, index) => `${x(index)} ${y(hours)}`);
-            const line = `M ${points.join(' L ')}`;
-            return <g key={calendar.id}>
-              <path d={`${line} L ${x(days.length - 1)} ${y(0)} L ${x(0)} ${y(0)} Z`} fill={calendar.color} fillOpacity="0.28" />
-              <path d={line} fill="none" stroke={calendar.color} strokeWidth="2.5" strokeLinejoin="round" />
-              <title>{`${calendar.name}: ${formatHours(calendar.hours)} hours in the last 30 days`}</title>
-            </g>;
-          }) : <text x={width / 2} y={height / 2} textAnchor="middle" fill="currentColor" fontSize="14">No hours in this period</text>}
+          {total > 0 ? <>
+            {activeAreas.map(calendar => {
+              const points = calendar.dailyHours.map((hours, index) => `${x(index)} ${y(hours)}`);
+              return <path key={calendar.id} d={`M ${points.join(' L ')} L ${x(days.length - 1)} ${y(0)} L ${x(0)} ${y(0)} Z`} fill={calendar.color} fillOpacity={chartAreaOpacity} />;
+            })}
+            {activeAreas.map((calendar, index) => {
+              const points = calendar.dailyHours.map((hours, dayIndex) => `${x(dayIndex)} ${y(hours)}`);
+              const line = `M ${points.join(' L ')}`;
+              return <g key={calendar.id}>
+                <title>{`${calendar.name}: ${formatHours(calendar.hours)} hours in the last 30 days`}</title>
+                <path d={line} fill="none" stroke={calendar.color} strokeWidth={chartLineWidth} strokeLinejoin="round" filter={`url(#${chartId}-line-glow-${index})`} />
+                {calendar.dailyHours.map((hours, dayIndex) => <circle key={days[dayIndex].date.getTime()} cx={x(dayIndex)} cy={y(hours)} r={chartDotRadius} fill={calendar.color}><title>{`${calendar.name}, ${dateLabel(days[dayIndex].date)}: ${formatHours(hours)} hours`}</title></circle>)}
+              </g>;
+            })}
+          </> : <text x={width / 2} y={height / 2} textAnchor="middle" fill="currentColor" fontSize="14">No hours in this period</text>}
         </svg>
       </div>
       <details className="mt-3 text-xs text-muted">
