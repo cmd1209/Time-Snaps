@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import type { CalendarEvent, SavedCalendar } from '../types';
 import { loadCalendar } from '../utils/calendar';
-import { dashboardMonths, dashboardStats, formatHours } from '../utils/dashboard';
+import { dashboardDays, dashboardMonths, dashboardStats, formatHours } from '../utils/dashboard';
 import { calendarColor, calendarTextColor } from '../utils/calendarColor';
 import { RecentActivity } from '../components/RecentActivity';
 import { DashboardCharts } from '../components/DashboardCharts';
@@ -82,6 +82,17 @@ export function Dashboard({ calendarSelection, refreshStatus, calendars, selecte
     }),
   ], [events, calendars, selectedId, comparisons]);
   const overview = useMemo(() => dashboardStats(allEvents, months, now), [allEvents, months, now]);
+  const donutCalendars = calendars.map(calendar => {
+    const calendarEvents = calendar.id === selectedId ? events : comparisons[calendar.id]?.events ?? [];
+    const dailyHours = dashboardDays(calendarEvents, now).map(day => day.hours);
+    return {
+      id: calendar.id,
+      name: calendar.name,
+      color: color(calendar.id),
+      hours: dailyHours.reduce((sum, hours) => sum + hours, 0),
+      dailyHours,
+    };
+  });
   const overviewHours = (value: number) => overviewUnavailable ? '—' : `${formatHours(value)} Hrs.`;
   const selectedMetrics = [
     ['Total Time', stats.total],
@@ -120,7 +131,7 @@ export function Dashboard({ calendarSelection, refreshStatus, calendars, selecte
       </div>
       {(loading || comparing || (otherCalendars.length > 0 && loadedScope !== loadScope)) && <p role="status" className="text-sm text-muted">Loading totals across all calendars…</p>}
       {loadedScope === loadScope && otherCalendars.map(calendar => comparisons[calendar.id]?.error && <p key={calendar.id} role="alert" className="text-sm text-error">{calendar.name}: {comparisons[calendar.id].error} All-calendar totals are unavailable. Use Refresh to retry.</p>)}
-      <RecentActivity events={allEvents} now={now} unavailable={overviewUnavailable} />
+      <RecentActivity events={allEvents} now={now} unavailable={overviewUnavailable} calendars={donutCalendars} />
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4 border-0">
         {calendarSelection}
         <div className="flex min-w-0 flex-wrap items-center gap-2" aria-label="Calendars in chart">
