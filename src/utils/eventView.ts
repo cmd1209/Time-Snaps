@@ -17,11 +17,11 @@ export function filterEvents(events: CalendarEvent[], from: string, to: string):
 
 export function groupEventsByDay(events: CalendarEvent[]): [string, CalendarEvent[]][] {
   const groups = new Map<string, CalendarEvent[]>();
-  for (const event of [...events].sort((a, b) => (a.start ?? 'z').localeCompare(b.start ?? 'z'))) {
+  for (const event of [...events].sort((a, b) => (b.start ?? 'z').localeCompare(a.start ?? 'z'))) {
     const key = event.start ? localDateKey(event.start) : '';
     groups.set(key, [...(groups.get(key) ?? []), event]);
   }
-  return [...groups].sort(([a], [b]) => (a || 'z').localeCompare(b || 'z'));
+  return [...groups].sort(([a], [b]) => (b || 'z').localeCompare(a || 'z'));
 }
 
 export function timedMinutes(events: CalendarEvent[]): number {
