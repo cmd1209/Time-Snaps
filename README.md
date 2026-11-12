@@ -52,7 +52,7 @@ After deployment, paste a public Apple calendar URL and load it. Verify the dete
 
 The SDK persists the Supabase session in browser localStorage. Passwords are submitted only to Supabase Auth. Calendar metadata lives in `public.calendars`, protected by ownership RLS; there is no profile table. Public feed URLs are visible to their owner, and the underlying published feed remains public. The public calendar-fetch endpoint remains available without login and does not read the database.
 
-Use the **Save calendar** button on an individual calendar after adding it or editing its URL or color. Only that calendar is validated and saved; other unsaved drafts stay untouched. **Remove** immediately removes that calendar from Time Snaps (not Apple). Failed saves or removals keep the draft and show an error next to its button. **Refresh** fetches fresh events for the selected calendar.
+Use the **Save calendar** button on an individual calendar after adding it or editing its URL or color. Only that calendar is validated and saved; other unsaved drafts stay untouched. The trash icon asks for confirmation before removing that calendar from Time Snaps (not Apple). Failed saves or removals keep the draft and show an error next to its button. **Refresh** fetches fresh events for the selected calendar.
 
 ### Account verification
 
@@ -72,15 +72,27 @@ The integration test creates temporary calendar rows and deletes them afterward.
 
 ## Viewing saved calendars and Settings
 
-The main menu contains **Dashboard**, **Settings**, and **Refresh**. After login or refresh, the newest saved calendar loads automatically. Use the dashboard calendar dropdown to select another calendar.
+The main menu contains **Dashboard**, **Calendar**, **Settings**, and **Refresh**. After login or refresh, the newest saved calendar loads automatically. Use the dashboard calendar dropdown to select another calendar.
 
 **Settings** combines calendar management with each calendar's total time and event count. It opens automatically for accounts with no saved calendars. Add, edit, save, color, and remove controls work as before, and switching views preserves unsaved drafts. **Add Calendar** inserts a new draft at the top; saved calendars are restored newest first.
 
 Each calendar shows totals for all events available in its current feed, independent of the dashboard chart period. Event count includes all-day events, while total time excludes them. Totals load automatically when Settings opens or a URL is resolved. **Refresh** reloads the selected calendar, dashboard comparisons, and totals in Settings; a failed total also has its own **Retry totals** button. Failed loads display unavailable values instead of zero.
 
-The former Details page and date-filtered event list are no longer shown. A full calendar view is planned for the next phase. The event-list components and date-filtering utilities remain available for that work.
+The former Details page and date-filtered event list have been replaced by **Calendar**.
 
 Check the existing date-filtering utilities with `node --test tests/event-view.test.js` (Node 22.18+).
+
+## Calendar view
+
+Open **Calendar** from the main menu to browse all saved calendars together. A color legend identifies each calendar; there is no calendar selector in this view. **Week** is the default, weeks start on Monday, and **Month / Week / Day** switch the layout without losing the current date. Use **Today**, previous/next, or the date picker to navigate. Clicking a date in Month or a day heading in Week opens that Day.
+
+Month shows titled entries on their dates. Week and Day place entries on an hourly timeline, with overlapping entries beside each other and overnight entries split across dates. All-day entries appear above the hourly timeline. Narrow screens can scroll horizontally through Month and Week, and the timeline scrolls vertically through all 24 hours.
+
+Click an entry to open its title, calendar, dates, duration, description, and location. Close with the close button or Escape. Entries without a valid date remain accessible below the calendar. Empty periods, loading, and failed fetches have separate messages; **Refresh** reloads all feeds in Calendar. If a feed fails, its error appears while successful calendars remain visible.
+
+Dates and times use the viewer's local time zone. This is a read-only view of recorded time; recurring definitions are not expanded. Each entry uses its source calendar's saved color, and its details name that calendar.
+
+Check date placement, overlap lanes, overnight clipping, and calendar navigation with `node --test tests/calendar-layout.test.js`.
 
 ## Editing styles with Tailwind
 
@@ -111,7 +123,7 @@ The signed-in app opens on **Dashboard**, following the Figma mockup. Use the he
 - Add saved calendars with **Compare calendar**. Remove them with their chip's X button. Comparison choices last for the current signed-in app session; no additional Supabase columns are needed.
 - Bars stack calendar hours per month; lines show each calendar separately. Hover a mark for exact hours, or open **View chart data** for the accessible table.
 - All-day events are excluded. Recurring series are still not expanded by the existing parser, as noted on the dashboard.
-- Per-calendar event counts and all-date time totals are available in **Settings**. The event list is deferred to the upcoming calendar view.
+- Per-calendar event counts and all-date time totals are available in **Settings**. Open **Calendar** to browse individual entries.
 
 `src/views/Dashboard.tsx` contains the dashboard controls, `src/components/DashboardCharts.tsx` the SVG charts, and `src/utils/dashboard.ts` the tested calculations. Only `lucide-react` was added; the charts do not require a library. Edit `--color-dashboard-header` and the `--color-calendar-*` tokens in `src/styles.css` to adjust the Figma colors, and use Tailwind classes for spacing.
 

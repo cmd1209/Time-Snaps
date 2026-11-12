@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CalendarDays, ChevronDown } from 'lucide-react';
 import { AppNavigation } from './components/AppNavigation';
 import { Dashboard } from './views/Dashboard';
+import { CalendarView } from './views/CalendarView';
 import { supabase } from './lib/supabase';
 import { AccountMenu } from './components/AccountMenu';
 import { CalendarInputCard } from './components/CalendarInputCard';
@@ -24,8 +25,9 @@ export default function App({ userId, email, firstName, lastName, onLogout, logo
   const [rowMessages, setRowMessages] = useState<Record<string, string>>({});
   const [saveMessage, setSaveMessage] = useState('');
   const [restoreAttempt, setRestoreAttempt] = useState(0);
-  const [view, setView] = useState<'dashboard' | 'settings'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'calendar' | 'settings'>('dashboard');
   const [refreshToken, setRefreshToken] = useState(0);
+  const [calendarViewLoading, setCalendarViewLoading] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -366,7 +368,7 @@ export default function App({ userId, email, firstName, lastName, onLogout, logo
   }
 
   function refreshCalendars() {
-    if (!selectedCalendar || isLoading) return;
+    if (!selectedCalendar || isLoading || (view === 'calendar' && calendarViewLoading)) return;
     setRefreshToken(value => value + 1);
     void loadRows([{ url: selectedCalendar.calendar_url }]);
   }
@@ -402,13 +404,18 @@ export default function App({ userId, email, firstName, lastName, onLogout, logo
       </header>
       <div className="content-container mx-auto max-w-[1240px] py-4 lg:py-6 rounded-4xl">
         <div className="mx-auto grid max-w-[1240px] grid-cols-1 gap-4 px-4 lg:grid-cols-[184px_minmax(0,1fr)] lg:gap-6 lg:px-6">
-          <AppNavigation view={view} onViewChange={setView} onRefresh={refreshCalendars} refreshing={isLoading} refreshDisabled={!selectedCalendarId || isLoading || saving || restoring || restoreFailed} />
+          <AppNavigation view={view} onViewChange={setView} onRefresh={refreshCalendars} refreshing={isLoading || (view === 'calendar' && calendarViewLoading)} refreshDisabled={!savedCalendars.length || isLoading || (view === 'calendar' && calendarViewLoading) || saving || restoring || restoreFailed} />
           <main id="main-content" tabIndex={-1} className="min-w-0 pb-[calc(112px+env(safe-area-inset-bottom))] lg:pb-12 [overflow-wrap:anywhere]">
             <div hidden={view !== 'dashboard'}>
               {statusTone === 'error' && <p className="mb-4 text-sm text-error" role="alert">{statusMessage}</p>}
               <Dashboard calendarSelection={calendarSelection} refreshStatus={refreshStatus} calendars={savedCalendars} selectedId={selectedCalendarId} events={events} loading={isLoading} failed={statusTone === 'error'} refreshToken={refreshToken} />
             </div>
 
+
+            <div hidden={view !== 'calendar'}>
+              <CalendarView active={view === 'calendar'} calendars={savedCalendars} refreshToken={refreshToken} restoring={restoring}
+                restoreError={restoreFailed ? saveMessage : null} onLoadingChange={setCalendarViewLoading} onSettings={() => setView('settings')} />
+            </div>
 
             <section hidden={view !== 'settings'} aria-labelledby="settings-heading">
               <h1 id="settings-heading" className="text-xxl font-medium">Settings</h1>

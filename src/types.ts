@@ -14,6 +14,7 @@ export interface CalendarInputRow {
 }
 
 export interface CalendarEvent {
+  calendarId?: string;
   calendarName: string;
   sourceUrl: string;
   uid: string;
