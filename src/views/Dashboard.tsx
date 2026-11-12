@@ -106,7 +106,7 @@ export function Dashboard({ calendarSelection, refreshStatus, calendars, selecte
   return <section aria-labelledby="dashboard-heading" className="min-w-0">
     <h1 id="dashboard-heading" className="text-xxl font-medium">Dashboard</h1>
     <div role="status" className="mb-6 mt-1 text-xs text-muted">{refreshStatus}</div>
-    {!selected ? <p className="py-8 text-sm text-muted">Save a calendar in Calendar Settings to see your dashboard.</p> : <>
+    {!selected ? <p className="py-8 text-sm text-muted">Save a calendar in Settings to see your dashboard.</p> : <>
       <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4" aria-label="Statistics across all saved calendars">
         <div className="card min-w-0 p-5 sm:p-6" title="Number of saved calendars across your account.">
           <h3 className="m-0 text-xs font-normal">Calendars</h3>

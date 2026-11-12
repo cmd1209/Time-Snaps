@@ -219,6 +219,19 @@ button:disabled {
   background: rgb(18 26 47 / 30%);
 }
 
+.calendar-remove-dialog {
+  box-sizing: border-box;
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+  background: var(--color-page);
+  color: var(--color-ink);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 35%);
+}
+
+.calendar-remove-dialog::backdrop {
+  background: rgb(0 0 0 / 60%);
+}
+
 .calendar-preview__label {
   font-size: 0.9rem;
   color: var(--color-muted);

@@ -1,9 +1,14 @@
+import { useId, useRef, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { colorPickerValue } from '../utils/calendarColor';
 import { Card } from './Card';
-import { CalendarInputRow } from '../types';
+import { CalendarTotals } from './CalendarTotals';
+import { CalendarInputRow, SavedCalendar } from '../types';
 
 interface CalendarInputCardProps {
   rows: CalendarInputRow[];
+  savedCalendars: SavedCalendar[];
+  refreshToken: number;
   disabled: boolean;
   pendingCalendar: { id: string; action: 'save' | 'remove' } | null;
   colorEnabled: boolean;
@@ -18,6 +23,8 @@ interface CalendarInputCardProps {
 
 export function CalendarInputCard({
   rows,
+  savedCalendars,
+  refreshToken,
   disabled,
   pendingCalendar,
   colorEnabled,
@@ -29,6 +36,10 @@ export function CalendarInputCard({
   onChangeColor,
   onResolveRow
 }: CalendarInputCardProps) {
+  const removeDialog = useRef<HTMLDialogElement>(null);
+  const [removal, setRemoval] = useState<{ id: string; name: string } | null>(null);
+  const dialogId = useId();
+
   return (
     <Card
       title="Manage calendars"
@@ -41,17 +52,32 @@ export function CalendarInputCard({
     >
       {!colorEnabled && <p className="hint" role="status">Custom color saving is not set up yet. Your chosen color will stay here while you finish the database setup.</p>}
       <div className="grid grid-cols-1 gap-3">
-        {rows.map((row, index) => (
+        {rows.map((row, index) => {
+          const savedCalendar = savedCalendars.find(calendar => calendar.id === row.id);
+          const heading = savedCalendar?.name ?? 'New calendar';
+          const showNamePreview = !savedCalendar || row.isResolving || (row.calendarName && row.calendarName !== savedCalendar.name);
+          return (
           <form className="calendar-input-row p-3.5" key={row.id} onSubmit={event => { event.preventDefault(); onSave(row.id); }}>
             <div className="mb-3 flex items-center justify-between gap-3">
-              <strong>Calendar {index + 1}</strong>
+              <div className="flex min-w-0 items-center gap-3">
+                <input type="color" className="h-9 w-9 shrink-0 cursor-pointer rounded border border-solid border-line bg-control p-1"
+                  aria-label={`Color for ${row.calendarName ?? heading}`}
+                  title={`Color for ${row.calendarName ?? heading}`}
+                  disabled={disabled} value={colorPickerValue(row.color, index)}
+                  onChange={event => onChangeColor(row.id, event.target.value)} />
+                <h3 className="m-0 min-w-0 text-base font-semibold">{heading}</h3>
+              </div>
                 <button
                   type="button"
-                  className="ghost-button"
-                  disabled={disabled} onClick={() => onRemoveRow(row.id)}
-                  aria-label={`Remove calendar ${index + 1}`}
+                  className="ghost-button flex min-h-11 min-w-11 shrink-0 items-center justify-center"
+                  disabled={disabled} onClick={() => {
+                    setRemoval({ id: row.id, name: savedCalendar?.name ?? row.calendarName ?? heading });
+                    removeDialog.current?.showModal();
+                  }}
+                  aria-label={pendingCalendar?.id === row.id && pendingCalendar.action === 'remove' ? `Removing ${heading}` : `Remove ${heading}`}
+                  title={`Remove ${heading}`}
                 >
-                  {pendingCalendar?.id === row.id && pendingCalendar.action === 'remove' ? 'Removing...' : 'Remove'}
+                  <Trash2 size={20} aria-hidden="true" />
                 </button>
             </div>
 
@@ -72,28 +98,18 @@ export function CalendarInputCard({
               />
             </label>
 
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <label className="flex items-center gap-2 text-sm">
-                <span>Calendar color</span>
-                <input type="color" className="h-9 w-12 cursor-pointer rounded border border-solid border-line bg-control p-1"
-                  aria-label={`Color for ${row.calendarName ?? `Calendar ${index + 1}`}`}
-                  disabled={disabled} value={colorPickerValue(row.color, index)}
-                  onChange={event => onChangeColor(row.id, event.target.value)} />
-              </label>
-              <span className="text-xs text-muted">{row.color ?? 'Default palette'}</span>
-              {row.color && <button type="button" className="ghost-button text-xs" disabled={disabled} onClick={() => onChangeColor(row.id, null)}>Use default</button>}
-            </div>
             <div className="calendar-preview mt-3 grid grid-cols-1 gap-2.5">
-              <div>
+              {showNamePreview && <div>
                 <span className="calendar-preview__label mb-1 block">Calendar name</span>
                 <strong>
                   {row.isResolving
                     ? 'Detecting...'
                     : row.calendarName ?? (row.previewError ? 'Could not detect name' : 'Waiting for URL')}
                 </strong>
-              </div>
+              </div>}
               {row.previewError ? <p className="calendar-preview__error">{row.previewError}</p> : null}
             </div>
+            <CalendarTotals url={row.normalizedUrl} refreshToken={refreshToken} />
             <div className="mt-4">
               <button type="submit" disabled={disabled || row.isResolving || !row.url.trim()}>
                 {pendingCalendar?.id === row.id && pendingCalendar.action === 'save' ? 'Saving...' : 'Save calendar'}
@@ -101,10 +117,26 @@ export function CalendarInputCard({
               {rowMessages[row.id] && <p role="status">{rowMessages[row.id]}</p>}
             </div>
           </form>
-        ))}
+        );
+        })}
       </div>
 
-      <p className="hint">Save each calendar separately. Remove takes effect immediately in Time Snaps and does not delete the calendar from Apple.</p>
+      <dialog ref={removeDialog} className="calendar-remove-dialog w-[min(420px,calc(100vw-48px))] p-6 [overflow-wrap:anywhere]"
+        aria-labelledby={`${dialogId}-title`} aria-describedby={`${dialogId}-description`}
+        onClose={() => setRemoval(null)}>
+        <h2 id={`${dialogId}-title`} className="m-0 text-lg font-semibold">Remove calendar?</h2>
+        <p id={`${dialogId}-description`} className="text-sm text-muted">Are you sure you want to remove <strong className="text-ink">{removal?.name}</strong> from Time Snaps? This will not delete it from Apple.</p>
+        <div className="mt-5 flex flex-wrap justify-end gap-3">
+          <button type="button" className="secondary-button" autoFocus onClick={() => removeDialog.current?.close()}>Cancel</button>
+          <button type="button" disabled={disabled || !removal} onClick={() => {
+            if (!removal || disabled) return;
+            const rowId = removal.id;
+            removeDialog.current?.close();
+            onRemoveRow(rowId);
+          }}>Remove calendar</button>
+        </div>
+      </dialog>
+      <p className="hint">Save each calendar separately. Removing a calendar requires confirmation and does not delete it from Apple.</p>
     </Card>
   );
 }

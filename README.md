@@ -33,7 +33,7 @@ node --test tests/calendar.test.js
 npm run build
 ```
 
-After deployment, paste a public Apple calendar URL and load it. Verify the detected name, event list, and summary. When the direct fetch is blocked by CORS, the Network panel should show a successful POST to `/api/calendar`. An ordinary GET to that endpoint should return 405, not 404.
+After deployment, paste a public Apple calendar URL and load it. Verify the detected name, per-calendar totals in Settings, and dashboard charts. When the direct fetch is blocked by CORS, the Network panel should show a successful POST to `/api/calendar`. An ordinary GET to that endpoint should return 405, not 404.
 
 ## Current limits
 
@@ -70,17 +70,17 @@ node --env-file=.env.local --test tests/supabase.integration.test.js
 
 The integration test creates temporary calendar rows and deletes them afterward. Without the four test-account variables it is skipped.
 
-## Viewing saved calendars
+## Viewing saved calendars and Settings
 
-After login or refresh, the first saved calendar loads automatically. Use the **Saved calendars** dropdown to load another calendar's events, or **Refresh** to fetch updates. Switching calendars clears the previous results and ignores late responses from earlier selections. The dropdown uses saved metadata; editing the URL fields does not change it until **Save calendar** succeeds. Calendar management is available under the collapsible **Calendar settings** section.
+The main menu contains **Dashboard**, **Settings**, and **Refresh**. After login or refresh, the newest saved calendar loads automatically. Use the dashboard calendar dropdown to select another calendar.
 
-## Calendar viewer
+**Settings** combines calendar management with each calendar's total time and event count. It opens automatically for accounts with no saved calendars. Add, edit, save, color, and remove controls work as before, and switching views preserves unsaved drafts. **Add Calendar** inserts a new draft at the top; saved calendars are restored newest first.
 
-The main view shows the selected calendar, a refresh indicator, and events grouped by day in chronological order. Calendar URLs, adding/removing calendars, and saving changes live in **Calendar settings**, which opens automatically for an account with no saved calendars. The account menu contains email and logout.
+Each calendar shows totals for all events available in its current feed, independent of the dashboard chart period. Event count includes all-day events, while total time excludes them. Totals load automatically when Settings opens or a URL is resolved. **Refresh** reloads the selected calendar, dashboard comparisons, and totals in Settings; a failed total also has its own **Retry totals** button. Failed loads display unavailable values instead of zero.
 
-The date range defaults to **All dates**; use **This month** or set From/To dates to narrow it. Both endpoints are inclusive and match the event's start date in the viewer's local time zone. Events without a start date appear only with All dates. Event count and timed duration reflect the filtered list; all-day events are excluded from timed duration. Expand **Event details** for descriptions and locations. Raw feed URLs, JSON, and fetch diagnostics are no longer part of the event view.
+The former Details page and date-filtered event list are no longer shown. A full calendar view is planned for the next phase. The event-list components and date-filtering utilities remain available for that work.
 
-Check date filtering and grouping with `node --test tests/event-view.test.js` (Node 22.18+).
+Check the existing date-filtering utilities with `node --test tests/event-view.test.js` (Node 22.18+).
 
 ## Editing styles with Tailwind
 
@@ -102,7 +102,7 @@ The TypeScript build regenerates the existing `vite.config.js` from `vite.config
 
 ## Dashboard layout (layout branch)
 
-The signed-in app opens on **Dashboard**, following the Figma mockup. Use the header calendar selector to choose the primary calendar. **Calendar Settings** opens the existing add/edit/remove form; switching views preserves unsaved edits. **Refresh** reloads the primary calendar and enabled comparisons.
+The signed-in app opens on **Dashboard**, following the Figma mockup. Use the header calendar selector to choose the primary calendar. **Settings** opens the existing add/edit/remove form; switching views preserves unsaved edits. **Refresh** reloads the primary calendar and enabled comparisons.
 
 - The four headline statistics apply only to the selected primary calendar.
 - **Total** includes all timed event durations available in that feed, including future scheduled events.
@@ -111,7 +111,7 @@ The signed-in app opens on **Dashboard**, following the Figma mockup. Use the he
 - Add saved calendars with **Compare calendar**. Remove them with their chip's X button. Comparison choices last for the current signed-in app session; no additional Supabase columns are needed.
 - Bars stack calendar hours per month; lines show each calendar separately. Hover a mark for exact hours, or open **View chart data** for the accessible table.
 - All-day events are excluded. Recurring series are still not expanded by the existing parser, as noted on the dashboard.
-- Event details and their independent date filters remain below the charts. These filters do not change dashboard statistics.
+- Per-calendar event counts and all-date time totals are available in **Settings**. The event list is deferred to the upcoming calendar view.
 
 `src/views/Dashboard.tsx` contains the dashboard controls, `src/components/DashboardCharts.tsx` the SVG charts, and `src/utils/dashboard.ts` the tested calculations. Only `lucide-react` was added; the charts do not require a library. Edit `--color-dashboard-header` and the `--color-calendar-*` tokens in `src/styles.css` to adjust the Figma colors, and use Tailwind classes for spacing.
 
@@ -121,7 +121,7 @@ Local checks: `npm run build` and `node --test tests/calendar.test.js tests/even
 
 Run `supabase/migrations/002_calendar_color.sql` once in the Supabase SQL Editor before using this version. It adds an optional hex color to each calendar; the existing ownership policies continue to protect the row.
 
-In **Calendar Settings**, choose a **Calendar color** and click that calendar’s **Save calendar** button. The color is restored on login and used for that calendar's dashboard chip and both charts. Chip text switches between dark and light for readability. **Use default** returns the calendar to the theme palette. No event or Apple-calendar data is modified.
+In **Settings**, use the color picker beside the calendar name and click that calendar’s **Save calendar** button. The color is restored on login and used for that calendar's dashboard chip and both charts. Chip text switches between dark and light for readability. No event or Apple-calendar data is modified.
 
 
 ## Account avatars
